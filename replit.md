@@ -18,6 +18,7 @@ Preferred communication style: Simple, everyday language.
 - React 18+ with TypeScript using Vite as the build tool
 - Client-side routing via Wouter (lightweight alternative to React Router)
 - No Server-Side Rendering (SSR) - pure SPA architecture
+- Progressive Web App (PWA) support with service worker for offline functionality
 
 **UI Component System:**
 - Radix UI primitives for accessible, unstyled components
@@ -121,6 +122,14 @@ Preferred communication style: Simple, everyday language.
 - Lucide React for consistent iconography
 - cmdk for command palette functionality
 - papaparse for CSV parsing and generation
+
+**Progressive Web App (PWA):**
+- Web app manifest (`manifest.json`) with app metadata, icons, and theming
+- Service worker (`service-worker.js`) for offline caching and navigation fallback
+- App icons in 192x192 and 512x512 sizes for installation on mobile and desktop
+- Production-only service worker registration to avoid dev environment conflicts
+- Navigation fallback to cached index.html for offline SPA routing
+- iOS and Android meta tags for proper mobile app behavior
 
 **Build & Development:**
 - TypeScript strict mode enabled
