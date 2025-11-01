@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { insertStockMovementSchema } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -9,9 +13,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -33,12 +44,31 @@ interface StockMovementDialogProps {
 export function StockMovementDialog({ trigger, movementType }: StockMovementDialogProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    product: "",
-    quantity: "",
-    warehouse: "",
-    targetWarehouse: "",
-    notes: "",
+
+  const formSchema = insertStockMovementSchema.extend({
+    type: z.literal(movementType),
+  }).refine((data) => {
+    if (data.type === "transfer") {
+      return !!data.targetWarehouseId;
+    }
+    return true;
+  }, {
+    message: "Target warehouse is required for transfers",
+    path: ["targetWarehouseId"],
+  });
+
+  type FormValues = z.infer<typeof formSchema>;
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      type: movementType,
+      productId: "",
+      warehouseId: "",
+      quantity: 1,
+      targetWarehouseId: undefined,
+      notes: undefined,
+    },
   });
 
   const { data: products } = useQuery<Product[]>({
@@ -52,7 +82,7 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
   });
 
   const createMovement = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: FormValues) => {
       const res = await apiRequest("POST", "/api/stock-movements", data);
       return res.json();
     },
@@ -66,7 +96,7 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
         description: "Stock movement recorded successfully",
       });
       setOpen(false);
-      setFormData({ product: "", quantity: "", warehouse: "", targetWarehouse: "", notes: "" });
+      form.reset();
     },
     onError: (error: Error) => {
       if (isUnauthorizedError(error)) {
@@ -88,22 +118,8 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const movementData: any = {
-      productId: formData.product,
-      warehouseId: formData.warehouse,
-      type: movementType,
-      quantity: parseInt(formData.quantity),
-      notes: formData.notes || undefined,
-    };
-
-    if (movementType === "transfer" && formData.targetWarehouse) {
-      movementData.targetWarehouseId = formData.targetWarehouse;
-    }
-
-    createMovement.mutate(movementData);
+  const onSubmit = (data: FormValues) => {
+    createMovement.mutate(data);
   };
 
   const titles = {
@@ -116,105 +132,149 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{titles[movementType]}</DialogTitle>
-            <DialogDescription>
-              Enter the details for this stock movement.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="product">Product</Label>
-              <Select
-                value={formData.product}
-                onValueChange={(value) => setFormData({ ...formData, product: value })}
-              >
-                <SelectTrigger id="product" data-testid="select-product">
-                  <SelectValue placeholder="Select a product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products?.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name} ({product.sku})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <DialogHeader>
+              <DialogTitle>{titles[movementType]}</DialogTitle>
+              <DialogDescription>
+                Enter the details for this stock movement.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <FormField
+                control={form.control}
+                name="productId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-product">
+                          <SelectValue placeholder="Select a product" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {products?.map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            {product.name} ({product.sku})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                placeholder="0"
-                value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                data-testid="input-quantity"
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        data-testid="input-quantity"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="warehouseId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{movementType === "transfer" ? "From Warehouse" : "Warehouse"}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-warehouse">
+                          <SelectValue placeholder="Select warehouse" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {warehouses?.map((warehouse) => (
+                          <SelectItem key={warehouse.id} value={warehouse.id}>
+                            {warehouse.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {movementType === "transfer" && (
+                <FormField
+                  control={form.control}
+                  name="targetWarehouseId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>To Warehouse</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-target-warehouse">
+                            <SelectValue placeholder="Select destination" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {warehouses?.map((warehouse) => (
+                            <SelectItem key={warehouse.id} value={warehouse.id}>
+                              {warehouse.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Add any additional notes..."
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-notes"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="warehouse">{movementType === "transfer" ? "From Warehouse" : "Warehouse"}</Label>
-              <Select
-                value={formData.warehouse}
-                onValueChange={(value) => setFormData({ ...formData, warehouse: value })}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  form.reset();
+                }}
+                disabled={createMovement.isPending}
               >
-                <SelectTrigger id="warehouse" data-testid="select-warehouse">
-                  <SelectValue placeholder="Select warehouse" />
-                </SelectTrigger>
-                <SelectContent>
-                  {warehouses?.map((warehouse) => (
-                    <SelectItem key={warehouse.id} value={warehouse.id}>
-                      {warehouse.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {movementType === "transfer" && (
-              <div className="space-y-2">
-                <Label htmlFor="targetWarehouse">To Warehouse</Label>
-                <Select
-                  value={formData.targetWarehouse}
-                  onValueChange={(value) => setFormData({ ...formData, targetWarehouse: value })}
-                >
-                  <SelectTrigger id="targetWarehouse" data-testid="select-target-warehouse">
-                    <SelectValue placeholder="Select destination" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {warehouses?.map((warehouse) => (
-                      <SelectItem key={warehouse.id} value={warehouse.id}>
-                        {warehouse.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (Optional)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Add any additional notes..."
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                data-testid="input-notes"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={createMovement.isPending}>
-              Cancel
-            </Button>
-            <Button type="submit" data-testid="button-submit-movement" disabled={createMovement.isPending}>
-              {createMovement.isPending ? "Recording..." : "Record Movement"}
-            </Button>
-          </DialogFooter>
-        </form>
+                Cancel
+              </Button>
+              <Button type="submit" data-testid="button-submit-movement" disabled={createMovement.isPending}>
+                {createMovement.isPending ? "Recording..." : "Record Movement"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

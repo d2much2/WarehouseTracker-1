@@ -18,19 +18,27 @@ import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
+import { Skeleton } from "@/components/ui/skeleton";
 
-function Router() {
+function AuthGate({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading) {
     return (
-      <Switch>
-        <Route path="/" component={Landing} />
-        <Route component={NotFound} />
-      </Switch>
+      <div className="flex h-screen w-full items-center justify-center">
+        <Skeleton className="h-96 w-96" />
+      </div>
     );
   }
 
+  if (!isAuthenticated) {
+    return <Landing />;
+  }
+
+  return <>{children}</>;
+}
+
+function AuthenticatedRoutes() {
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
@@ -69,7 +77,9 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
-          <Router />
+          <AuthGate>
+            <AuthenticatedRoutes />
+          </AuthGate>
           <Toaster />
         </TooltipProvider>
       </ThemeProvider>
