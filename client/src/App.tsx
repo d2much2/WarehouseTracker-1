@@ -11,6 +11,11 @@ import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Products from "@/pages/products";
 import Warehouses from "@/pages/warehouses";
+import Suppliers from "@/pages/suppliers";
+import Movements from "@/pages/movements";
+import Alerts from "@/pages/alerts";
+import Reports from "@/pages/reports";
+import Settings from "@/pages/settings";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -45,6 +50,11 @@ function Router() {
               <Route path="/" component={Dashboard} />
               <Route path="/products" component={Products} />
               <Route path="/warehouses" component={Warehouses} />
+              <Route path="/suppliers" component={Suppliers} />
+              <Route path="/movements" component={Movements} />
+              <Route path="/alerts" component={Alerts} />
+              <Route path="/reports" component={Reports} />
+              <Route path="/settings" component={Settings} />
               <Route component={NotFound} />
             </Switch>
           </main>

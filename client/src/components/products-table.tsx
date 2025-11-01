@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -10,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MoreHorizontal, Search, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown, MoreHorizontal, Plus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,31 +20,70 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  category: string;
-  totalStock: number;
-  stockStatus: "high" | "medium" | "low" | "out";
-}
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { AddProductDialog } from "./add-product-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Product } from "@shared/schema";
 
 interface ProductsTableProps {
   products: Product[];
 }
 
-const statusConfig = {
-  high: { label: "High", variant: "default" as const },
-  medium: { label: "Medium", variant: "secondary" as const },
-  low: { label: "Low", variant: "outline" as const },
-  out: { label: "Out of Stock", variant: "destructive" as const },
-};
-
 export function ProductsTable({ products }: ProductsTableProps) {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState<"name" | "sku" | "totalStock">("name");
+  const [sortField, setSortField] = useState<keyof Product>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  const deleteProduct = useMutation({
+    mutationFn: async (productId: string) => {
+      await apiRequest("DELETE", `/api/products/${productId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/low-stock"] });
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete product",
+        variant: "destructive",
+      });
+    },
+  });
 
   const filteredProducts = products
     .filter((product) =>
@@ -54,11 +94,13 @@ export function ProductsTable({ products }: ProductsTableProps) {
     .sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
+      if (aVal === null || aVal === undefined) return 1;
+      if (bVal === null || bVal === undefined) return -1;
       const modifier = sortDirection === "asc" ? 1 : -1;
       return aVal > bVal ? modifier : -modifier;
     });
 
-  const handleSort = (field: typeof sortField) => {
+  const handleSort = (field: keyof Product) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
@@ -67,9 +109,25 @@ export function ProductsTable({ products }: ProductsTableProps) {
     }
   };
 
+  const handleDelete = (product: Product) => {
+    setProductToDelete(product);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (productToDelete) {
+      deleteProduct.mutate(productToDelete.id);
+    }
+  };
+
+  const handleEdit = (product: Product) => {
+    setProductToEdit(product);
+    setEditDialogOpen(true);
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -80,92 +138,136 @@ export function ProductsTable({ products }: ProductsTableProps) {
             data-testid="input-search-products"
           />
         </div>
-        <Button onClick={() => console.log('Add product clicked')} data-testid="button-add-product">
-          Add Product
-        </Button>
+        <AddProductDialog
+          trigger={
+            <Button data-testid="button-add-product">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Product
+            </Button>
+          }
+        />
       </div>
 
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-sm font-medium uppercase tracking-wide">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleSort("sku")}
-                  className="h-8 px-2"
-                >
-                  SKU
-                  <ArrowUpDown className="ml-2 h-3 w-3" />
-                </Button>
-              </TableHead>
-              <TableHead className="text-sm font-medium uppercase tracking-wide">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleSort("name")}
-                  className="h-8 px-2"
-                >
-                  Product Name
-                  <ArrowUpDown className="ml-2 h-3 w-3" />
-                </Button>
-              </TableHead>
-              <TableHead className="text-sm font-medium uppercase tracking-wide">Category</TableHead>
-              <TableHead className="text-sm font-medium uppercase tracking-wide">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleSort("totalStock")}
-                  className="h-8 px-2"
-                >
-                  Total Stock
-                  <ArrowUpDown className="ml-2 h-3 w-3" />
-                </Button>
-              </TableHead>
-              <TableHead className="text-sm font-medium uppercase tracking-wide">Status</TableHead>
-              <TableHead className="w-12"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredProducts.map((product) => (
-              <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
-                <TableCell className="font-mono">{product.sku}</TableCell>
-                <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell className="text-muted-foreground">{product.category}</TableCell>
-                <TableCell className="font-mono">{product.totalStock}</TableCell>
-                <TableCell>
-                  <Badge variant={statusConfig[product.stockStatus].variant}>
-                    {statusConfig[product.stockStatus].label}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" data-testid={`button-menu-${product.id}`}>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => console.log('View', product.name)}>
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => console.log('Edit', product.name)}>
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => console.log('Delete', product.name)}>
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+      {filteredProducts.length === 0 ? (
+        <div className="border rounded-md p-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            {searchTerm ? "No products found matching your search." : "No products yet. Add your first product to get started."}
+          </p>
+        </div>
+      ) : (
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-sm font-medium uppercase tracking-wide">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSort("sku")}
+                    className="h-8 px-2"
+                  >
+                    SKU
+                    <ArrowUpDown className="ml-2 h-3 w-3" />
+                  </Button>
+                </TableHead>
+                <TableHead className="text-sm font-medium uppercase tracking-wide">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSort("name")}
+                    className="h-8 px-2"
+                  >
+                    Product Name
+                    <ArrowUpDown className="ml-2 h-3 w-3" />
+                  </Button>
+                </TableHead>
+                <TableHead className="text-sm font-medium uppercase tracking-wide">Category</TableHead>
+                <TableHead className="text-sm font-medium uppercase tracking-wide">Barcode</TableHead>
+                <TableHead className="text-sm font-medium uppercase tracking-wide">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSort("lowStockThreshold")}
+                    className="h-8 px-2"
+                  >
+                    Threshold
+                    <ArrowUpDown className="ml-2 h-3 w-3" />
+                  </Button>
+                </TableHead>
+                <TableHead className="w-12"></TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {filteredProducts.map((product) => (
+                <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
+                  <TableCell className="font-mono">{product.sku}</TableCell>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{product.category}</TableCell>
+                  <TableCell className="font-mono text-sm">{product.barcode || "-"}</TableCell>
+                  <TableCell className="font-mono">{product.lowStockThreshold}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" data-testid={`button-menu-${product.id}`}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleEdit(product)} data-testid={`button-edit-${product.id}`}>
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(product)}
+                          className="text-destructive"
+                          data-testid={`button-delete-${product.id}`}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the product "{productToDelete?.name}".
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleteProduct.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteProduct.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {productToEdit && (
+        <AddProductDialog
+          trigger={<div />}
+          product={productToEdit}
+          onSuccess={() => {
+            setProductToEdit(null);
+            setEditDialogOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
