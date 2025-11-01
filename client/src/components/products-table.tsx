@@ -258,16 +258,21 @@ export function ProductsTable({ products }: ProductsTableProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {productToEdit && (
-        <AddProductDialog
-          trigger={<div />}
-          product={productToEdit}
-          onSuccess={() => {
+      <AddProductDialog
+        trigger={<div style={{ display: 'none' }} />}
+        product={productToEdit || undefined}
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) {
             setProductToEdit(null);
-            setEditDialogOpen(false);
-          }}
-        />
-      )}
+          }
+        }}
+        onSuccess={() => {
+          setProductToEdit(null);
+          setEditDialogOpen(false);
+        }}
+      />
     </div>
   );
 }

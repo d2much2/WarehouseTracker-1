@@ -46,11 +46,16 @@ interface AddProductDialogProps {
   trigger: React.ReactNode;
   product?: Product;
   onSuccess?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddProductDialog({ trigger, product, onSuccess }: AddProductDialogProps) {
+export function AddProductDialog({ trigger, product, onSuccess, open: externalOpen, onOpenChange }: AddProductDialogProps) {
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
   const { data: suppliers } = useQuery<Supplier[]>({
     queryKey: ["/api/suppliers"],
@@ -267,8 +272,8 @@ export function AddProductDialog({ trigger, product, onSuccess }: AddProductDial
                 <FormItem>
                   <FormLabel>Supplier</FormLabel>
                   <Select
-                    value={field.value || ""}
-                    onValueChange={field.onChange}
+                    value={field.value || undefined}
+                    onValueChange={(value) => field.onChange(value || undefined)}
                   >
                     <FormControl>
                       <SelectTrigger data-testid="select-product-supplier">
@@ -276,7 +281,6 @@ export function AddProductDialog({ trigger, product, onSuccess }: AddProductDial
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
                       {suppliers?.map((supplier) => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                           {supplier.name}

@@ -63,8 +63,8 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: movementType,
-      productId: "",
-      warehouseId: "",
+      productId: undefined as any,
+      warehouseId: undefined as any,
       quantity: 1,
       targetWarehouseId: undefined,
       notes: undefined,
@@ -119,7 +119,17 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
   });
 
   const onSubmit = (data: FormValues) => {
+    console.log("Submitting stock movement:", data);
     createMovement.mutate(data);
+  };
+  
+  const onError = (errors: any) => {
+    console.error("Form validation errors:", errors);
+    toast({
+      title: "Validation Error",
+      description: "Please fill in all required fields correctly.",
+      variant: "destructive",
+    });
   };
 
   const titles = {
@@ -133,7 +143,7 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onSubmit, onError)}>
             <DialogHeader>
               <DialogTitle>{titles[movementType]}</DialogTitle>
               <DialogDescription>
@@ -147,7 +157,7 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Product</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
                       <FormControl>
                         <SelectTrigger data-testid="select-product">
                           <SelectValue placeholder="Select a product" />
@@ -192,7 +202,7 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{movementType === "transfer" ? "From Warehouse" : "Warehouse"}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
                       <FormControl>
                         <SelectTrigger data-testid="select-warehouse">
                           <SelectValue placeholder="Select warehouse" />
@@ -218,7 +228,7 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>To Warehouse</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl>
                           <SelectTrigger data-testid="select-target-warehouse">
                             <SelectValue placeholder="Select destination" />
