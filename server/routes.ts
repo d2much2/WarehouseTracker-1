@@ -11,6 +11,11 @@ import {
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for deployment
+  app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   await setupAuth(app);
 
   app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
