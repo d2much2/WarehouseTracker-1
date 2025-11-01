@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Product, Warehouse } from "@shared/schema";
 
 interface StockMovementDialogProps {
   trigger: React.ReactNode;
@@ -26,6 +31,7 @@ interface StockMovementDialogProps {
 }
 
 export function StockMovementDialog({ trigger, movementType }: StockMovementDialogProps) {
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     product: "",
@@ -35,11 +41,69 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
     notes: "",
   });
 
+  const { data: products } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+    enabled: open,
+  });
+
+  const { data: warehouses } = useQuery<Warehouse[]>({
+    queryKey: ["/api/warehouses"],
+    enabled: open,
+  });
+
+  const createMovement = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/stock-movements", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stock-movements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stock-movements/recent"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/low-stock"] });
+      toast({
+        title: "Success",
+        description: "Stock movement recorded successfully",
+      });
+      setOpen(false);
+      setFormData({ product: "", quantity: "", warehouse: "", targetWarehouse: "", notes: "" });
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to record stock movement",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Stock movement submitted:', movementType, formData);
-    setOpen(false);
-    setFormData({ product: "", quantity: "", warehouse: "", targetWarehouse: "", notes: "" });
+    
+    const movementData: any = {
+      productId: formData.product,
+      warehouseId: formData.warehouse,
+      type: movementType,
+      quantity: parseInt(formData.quantity),
+      notes: formData.notes || undefined,
+    };
+
+    if (movementType === "transfer" && formData.targetWarehouse) {
+      movementData.targetWarehouseId = formData.targetWarehouse;
+    }
+
+    createMovement.mutate(movementData);
   };
 
   const titles = {
@@ -70,9 +134,11 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
                   <SelectValue placeholder="Select a product" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="prod-1">Industrial Widget A</SelectItem>
-                  <SelectItem value="prod-2">Hydraulic Pump B</SelectItem>
-                  <SelectItem value="prod-3">Steel Beam C</SelectItem>
+                  {products?.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.name} ({product.sku})
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -99,9 +165,11 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
                   <SelectValue placeholder="Select warehouse" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="wh-1">Main Warehouse</SelectItem>
-                  <SelectItem value="wh-2">North Distribution Center</SelectItem>
-                  <SelectItem value="wh-3">South Storage Facility</SelectItem>
+                  {warehouses?.map((warehouse) => (
+                    <SelectItem key={warehouse.id} value={warehouse.id}>
+                      {warehouse.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -117,9 +185,11 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
                     <SelectValue placeholder="Select destination" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="wh-1">Main Warehouse</SelectItem>
-                    <SelectItem value="wh-2">North Distribution Center</SelectItem>
-                    <SelectItem value="wh-3">South Storage Facility</SelectItem>
+                    {warehouses?.map((warehouse) => (
+                      <SelectItem key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -137,11 +207,11 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={createMovement.isPending}>
               Cancel
             </Button>
-            <Button type="submit" data-testid="button-submit-movement">
-              Record Movement
+            <Button type="submit" data-testid="button-submit-movement" disabled={createMovement.isPending}>
+              {createMovement.isPending ? "Recording..." : "Record Movement"}
             </Button>
           </DialogFooter>
         </form>

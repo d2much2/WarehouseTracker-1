@@ -1,12 +1,46 @@
+import { useQuery } from "@tanstack/react-query";
 import { KpiCard } from "@/components/kpi-card";
 import { StockLevelChart } from "@/components/stock-level-chart";
 import { RecentMovementsTable } from "@/components/recent-movements-table";
 import { LowStockAlerts } from "@/components/low-stock-alerts";
 import { StockMovementDialog } from "@/components/stock-movement-dialog";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
 import { Package, DollarSign, AlertTriangle, Warehouse, ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
+import { formatDistanceToNow } from "date-fns";
 
 export default function Dashboard() {
+  const { toast } = useToast();
+
+  const { data: kpis, isLoading: kpisLoading, error: kpisError } = useQuery({
+    queryKey: ["/api/dashboard/kpis"],
+    retry: false,
+  });
+
+  const { data: recentMovementsData, isLoading: movementsLoading, error: movementsError } = useQuery({
+    queryKey: ["/api/stock-movements/recent"],
+    retry: false,
+  });
+
+  const { data: lowStockData, isLoading: alertsLoading, error: alertsError } = useQuery({
+    queryKey: ["/api/inventory/low-stock"],
+    retry: false,
+  });
+
+  if (kpisError && isUnauthorizedError(kpisError as Error)) {
+    toast({
+      title: "Unauthorized",
+      description: "You are logged out. Logging in again...",
+      variant: "destructive",
+    });
+    setTimeout(() => {
+      window.location.href = "/api/login";
+    }, 500);
+  }
+
   const chartData = [
     { date: "Jan", stock: 12400 },
     { date: "Feb", stock: 13200 },
@@ -16,19 +50,31 @@ export default function Dashboard() {
     { date: "Jun", stock: 15200 },
   ];
 
-  const recentMovements = [
-    { id: "mov-1", product: "Industrial Widget A", type: "in" as const, quantity: 500, warehouse: "Main Warehouse", user: "John Doe", timestamp: "2 hours ago" },
-    { id: "mov-2", product: "Hydraulic Pump B", type: "out" as const, quantity: 150, warehouse: "North DC", user: "Jane Smith", timestamp: "4 hours ago" },
-    { id: "mov-3", product: "Steel Beam C", type: "transfer" as const, quantity: 200, warehouse: "South Facility", user: "Mike Johnson", timestamp: "6 hours ago" },
-    { id: "mov-4", product: "Electric Motor D", type: "in" as const, quantity: 300, warehouse: "Main Warehouse", user: "Sarah Lee", timestamp: "8 hours ago" },
-    { id: "mov-5", product: "Bearing Set E", type: "adjustment" as const, quantity: 50, warehouse: "North DC", user: "Tom Wilson", timestamp: "10 hours ago" },
-  ];
+  const formatKpiValue = (key: string, value: number) => {
+    if (key === "stockValue") {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    }
+    return value.toLocaleString();
+  };
 
-  const lowStockAlerts = [
-    { id: "alert-1", product: "Industrial Widget A", sku: "WDG-001-A", currentStock: 45, threshold: 100, warehouse: "Main Warehouse" },
-    { id: "alert-2", product: "Hydraulic Pump B", sku: "HYD-002-B", currentStock: 12, threshold: 50, warehouse: "North DC" },
-    { id: "alert-3", product: "Steel Beam C", sku: "STL-003-C", currentStock: 8, threshold: 25, warehouse: "South Facility" },
-  ];
+  const recentMovements = recentMovementsData?.map((movement: any) => ({
+    id: movement.id,
+    product: movement.productId,
+    type: movement.type,
+    quantity: movement.quantity,
+    warehouse: movement.warehouseId,
+    user: movement.userId,
+    timestamp: formatDistanceToNow(new Date(movement.createdAt), { addSuffix: true }),
+  })) || [];
+
+  const lowStockAlerts = lowStockData?.map((alert: any) => ({
+    id: alert.id,
+    product: alert.product.name,
+    sku: alert.product.sku,
+    currentStock: alert.quantity,
+    threshold: alert.product.lowStockThreshold,
+    warehouse: alert.warehouseId,
+  })) || [];
 
   return (
     <div className="space-y-6">
@@ -38,29 +84,43 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          title="Total Products"
-          value="1,247"
-          icon={Package}
-          trend={{ value: 12, isPositive: true }}
-        />
-        <KpiCard
-          title="Total Stock Value"
-          value="$2.4M"
-          icon={DollarSign}
-          trend={{ value: 8, isPositive: true }}
-        />
-        <KpiCard
-          title="Low Stock Items"
-          value="23"
-          icon={AlertTriangle}
-          trend={{ value: 15, isPositive: false }}
-        />
-        <KpiCard
-          title="Active Warehouses"
-          value="8"
-          icon={Warehouse}
-        />
+        {kpisLoading ? (
+          <>
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </>
+        ) : kpisError ? (
+          <div className="col-span-full">
+            <Card className="p-4">
+              <p className="text-sm text-destructive">Failed to load KPIs. Please try again.</p>
+            </Card>
+          </div>
+        ) : (
+          <>
+            <KpiCard
+              title="Total Products"
+              value={kpis?.totalProducts || 0}
+              icon={Package}
+            />
+            <KpiCard
+              title="Total Stock Value"
+              value={formatKpiValue("stockValue", kpis?.stockValue || 0)}
+              icon={DollarSign}
+            />
+            <KpiCard
+              title="Low Stock Items"
+              value={kpis?.lowStockCount || 0}
+              icon={AlertTriangle}
+            />
+            <KpiCard
+              title="Active Warehouses"
+              value={kpis?.activeWarehouses || 0}
+              icon={Warehouse}
+            />
+          </>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -98,11 +158,19 @@ export default function Dashboard() {
           <StockLevelChart data={chartData} />
         </div>
         <div>
-          <LowStockAlerts alerts={lowStockAlerts} />
+          {alertsLoading ? (
+            <Skeleton className="h-96" />
+          ) : (
+            <LowStockAlerts alerts={lowStockAlerts} />
+          )}
         </div>
       </div>
 
-      <RecentMovementsTable movements={recentMovements} />
+      {movementsLoading ? (
+        <Skeleton className="h-96" />
+      ) : (
+        <RecentMovementsTable movements={recentMovements} />
+      )}
     </div>
   );
 }

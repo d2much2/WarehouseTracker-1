@@ -7,6 +7,7 @@ import {
   Settings,
   ArrowRightLeft,
   Bell,
+  LogOut,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -22,6 +23,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 const mainMenuItems = [
   {
@@ -71,6 +74,16 @@ const bottomMenuItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { user } = useAuth();
+
+  const getInitials = (firstName?: string | null, lastName?: string | null) => {
+    if (!firstName && !lastName) return "U";
+    return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
+  };
+
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
+  };
 
   return (
     <Sidebar>
@@ -112,17 +125,33 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="flex items-center gap-2 p-4">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="" alt="User" />
-            <AvatarFallback>JD</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col flex-1 min-w-0">
-            <span className="text-sm font-medium truncate">John Doe</span>
-            <Badge variant="secondary" className="w-fit text-xs">
-              Admin
-            </Badge>
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user?.profileImageUrl || ""} alt={user?.firstName || "User"} />
+              <AvatarFallback>
+                {getInitials(user?.firstName, user?.lastName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-sm font-medium truncate" data-testid="text-user-name">
+                {user?.firstName} {user?.lastName}
+              </span>
+              <Badge variant="secondary" className="w-fit text-xs" data-testid="badge-user-role">
+                {user?.role}
+              </Badge>
+            </div>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={handleLogout}
+            data-testid="button-logout"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </SidebarFooter>
     </Sidebar>
