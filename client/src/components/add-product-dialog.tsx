@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,7 +55,22 @@ export function AddProductDialog({ trigger, product, onSuccess, open: externalOp
   const [internalOpen, setInternalOpen] = useState(false);
   
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
-  const setOpen = onOpenChange || setInternalOpen;
+  const originalSetOpen = onOpenChange || setInternalOpen;
+  
+  const setOpen = (newOpen: boolean) => {
+    if (!newOpen) {
+      form.reset({
+        sku: "",
+        name: "",
+        description: "",
+        category: "",
+        barcode: "",
+        supplierId: undefined,
+        lowStockThreshold: 50,
+      });
+    }
+    originalSetOpen(newOpen);
+  };
 
   const { data: suppliers } = useQuery<Supplier[]>({
     queryKey: ["/api/suppliers"],
@@ -65,15 +80,29 @@ export function AddProductDialog({ trigger, product, onSuccess, open: externalOp
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      sku: product?.sku || "",
-      name: product?.name || "",
-      description: product?.description || "",
-      category: product?.category || "",
-      barcode: product?.barcode || "",
-      supplierId: product?.supplierId || undefined,
-      lowStockThreshold: product?.lowStockThreshold || 50,
+      sku: "",
+      name: "",
+      description: "",
+      category: "",
+      barcode: "",
+      supplierId: undefined,
+      lowStockThreshold: 50,
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        sku: product?.sku || "",
+        name: product?.name || "",
+        description: product?.description || "",
+        category: product?.category || "",
+        barcode: product?.barcode || "",
+        supplierId: product?.supplierId || undefined,
+        lowStockThreshold: product?.lowStockThreshold || 50,
+      });
+    }
+  }, [product, open, form]);
 
   const createProduct = useMutation({
     mutationFn: async (data: FormData) => {

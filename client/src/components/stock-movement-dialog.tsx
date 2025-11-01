@@ -45,7 +45,7 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
 
-  const formSchema = insertStockMovementSchema.extend({
+  const formSchema = insertStockMovementSchema.omit({ userId: true }).extend({
     type: z.literal(movementType),
   }).refine((data) => {
     if (data.type === "transfer") {
