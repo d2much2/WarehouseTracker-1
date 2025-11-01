@@ -3,11 +3,15 @@ import { ProductsTable } from "@/components/products-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { CSVUploadDialog } from "@/components/csv-upload-dialog";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import type { Product } from "@shared/schema";
 
 export default function Products() {
   const { toast } = useToast();
 
-  const { data: products, isLoading, error } = useQuery({
+  const { data: products, isLoading, error } = useQuery<Product[]>({
     queryKey: ["/api/products"],
     retry: false,
   });
@@ -23,11 +27,24 @@ export default function Products() {
     }, 500);
   }
 
+  const handleExportCSV = () => {
+    window.location.href = "/api/csv/download/products";
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold">Products</h1>
-        <p className="text-muted-foreground mt-1">Manage your product inventory</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold">Products</h1>
+          <p className="text-muted-foreground mt-1">Manage your product inventory</p>
+        </div>
+        <div className="flex gap-2">
+          <CSVUploadDialog type="products" invalidateKey="/api/products" />
+          <Button variant="outline" size="sm" onClick={handleExportCSV} data-testid="button-export-products">
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (

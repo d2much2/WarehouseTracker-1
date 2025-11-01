@@ -7,8 +7,10 @@ import {
   insertWarehouseSchema,
   insertSupplierSchema,
   insertStockMovementSchema,
+  insertInventoryLevelSchema,
 } from "@shared/schema";
 import { z } from "zod";
+import Papa from "papaparse";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint for deployment
@@ -329,6 +331,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching dashboard KPIs:", error);
       res.status(500).json({ message: "Failed to fetch dashboard KPIs" });
+    }
+  });
+
+  app.post("/api/csv/upload/products", isAuthenticated, async (req, res) => {
+    try {
+      const { data } = req.body;
+      if (!data || !Array.isArray(data)) {
+        return res.status(400).json({ message: "Invalid CSV data format" });
+      }
+
+      const validatedProducts = data.map((row: any) => 
+        insertProductSchema.parse({
+          sku: row.sku,
+          name: row.name,
+          description: row.description || null,
+          category: row.category,
+          barcode: row.barcode || null,
+          supplierId: row.supplierId || null,
+          lowStockThreshold: row.lowStockThreshold ? parseInt(row.lowStockThreshold) : 50,
+        })
+      );
+
+      const createdProducts = await storage.bulkCreateProducts(validatedProducts);
+      res.status(201).json({ 
+        message: `Successfully imported ${createdProducts.length} products`,
+        count: createdProducts.length,
+        products: createdProducts 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error uploading products CSV:", error);
+      res.status(500).json({ message: "Failed to import products" });
+    }
+  });
+
+  app.post("/api/csv/upload/warehouses", isAuthenticated, async (req, res) => {
+    try {
+      const { data } = req.body;
+      if (!data || !Array.isArray(data)) {
+        return res.status(400).json({ message: "Invalid CSV data format" });
+      }
+
+      const validatedWarehouses = data.map((row: any) => 
+        insertWarehouseSchema.parse({
+          name: row.name,
+          location: row.location,
+          capacity: parseInt(row.capacity),
+          status: row.status || "active",
+        })
+      );
+
+      const createdWarehouses = await storage.bulkCreateWarehouses(validatedWarehouses);
+      res.status(201).json({ 
+        message: `Successfully imported ${createdWarehouses.length} warehouses`,
+        count: createdWarehouses.length,
+        warehouses: createdWarehouses 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error uploading warehouses CSV:", error);
+      res.status(500).json({ message: "Failed to import warehouses" });
+    }
+  });
+
+  app.post("/api/csv/upload/suppliers", isAuthenticated, async (req, res) => {
+    try {
+      const { data } = req.body;
+      if (!data || !Array.isArray(data)) {
+        return res.status(400).json({ message: "Invalid CSV data format" });
+      }
+
+      const validatedSuppliers = data.map((row: any) => 
+        insertSupplierSchema.parse({
+          name: row.name,
+          contactPerson: row.contactPerson || null,
+          email: row.email || null,
+          phone: row.phone || null,
+          address: row.address || null,
+        })
+      );
+
+      const createdSuppliers = await storage.bulkCreateSuppliers(validatedSuppliers);
+      res.status(201).json({ 
+        message: `Successfully imported ${createdSuppliers.length} suppliers`,
+        count: createdSuppliers.length,
+        suppliers: createdSuppliers 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error uploading suppliers CSV:", error);
+      res.status(500).json({ message: "Failed to import suppliers" });
+    }
+  });
+
+  app.post("/api/csv/upload/inventory", isAuthenticated, async (req, res) => {
+    try {
+      const { data } = req.body;
+      if (!data || !Array.isArray(data)) {
+        return res.status(400).json({ message: "Invalid CSV data format" });
+      }
+
+      const validatedInventory = data.map((row: any) => 
+        insertInventoryLevelSchema.parse({
+          productId: row.productId,
+          warehouseId: row.warehouseId,
+          quantity: parseInt(row.quantity),
+        })
+      );
+
+      const updatedInventory = await storage.bulkUpdateInventoryLevels(validatedInventory);
+      res.status(201).json({ 
+        message: `Successfully imported ${updatedInventory.length} inventory levels`,
+        count: updatedInventory.length,
+        inventory: updatedInventory 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error uploading inventory CSV:", error);
+      res.status(500).json({ message: "Failed to import inventory" });
+    }
+  });
+
+  app.get("/api/csv/download/products", isAuthenticated, async (req, res) => {
+    try {
+      const products = await storage.getAllProducts();
+      const csv = Papa.unparse(products);
+      
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=products.csv");
+      res.send(csv);
+    } catch (error) {
+      console.error("Error downloading products CSV:", error);
+      res.status(500).json({ message: "Failed to export products" });
+    }
+  });
+
+  app.get("/api/csv/download/warehouses", isAuthenticated, async (req, res) => {
+    try {
+      const warehouses = await storage.getAllWarehouses();
+      const csv = Papa.unparse(warehouses);
+      
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=warehouses.csv");
+      res.send(csv);
+    } catch (error) {
+      console.error("Error downloading warehouses CSV:", error);
+      res.status(500).json({ message: "Failed to export warehouses" });
+    }
+  });
+
+  app.get("/api/csv/download/suppliers", isAuthenticated, async (req, res) => {
+    try {
+      const suppliers = await storage.getAllSuppliers();
+      const csv = Papa.unparse(suppliers);
+      
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=suppliers.csv");
+      res.send(csv);
+    } catch (error) {
+      console.error("Error downloading suppliers CSV:", error);
+      res.status(500).json({ message: "Failed to export suppliers" });
+    }
+  });
+
+  app.get("/api/csv/download/inventory", isAuthenticated, async (req, res) => {
+    try {
+      const inventory = await storage.getAllInventoryLevels();
+      const csv = Papa.unparse(inventory);
+      
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=inventory.csv");
+      res.send(csv);
+    } catch (error) {
+      console.error("Error downloading inventory CSV:", error);
+      res.status(500).json({ message: "Failed to export inventory" });
     }
   });
 

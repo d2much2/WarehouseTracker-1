@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { WarehouseCard } from "@/components/warehouse-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { AddWarehouseDialog } from "@/components/add-warehouse-dialog";
+import { CSVUploadDialog } from "@/components/csv-upload-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import type { Warehouse } from "@shared/schema";
@@ -29,6 +30,10 @@ export default function Warehouses() {
     }, 500);
   }
 
+  const handleExportCSV = () => {
+    window.location.href = "/api/csv/download/warehouses";
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -36,14 +41,21 @@ export default function Warehouses() {
           <h1 className="text-3xl font-semibold">Warehouses</h1>
           <p className="text-muted-foreground mt-1">Manage warehouse locations and capacity</p>
         </div>
-        <AddWarehouseDialog
-          trigger={
-            <Button data-testid="button-add-warehouse">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Warehouse
-            </Button>
-          }
-        />
+        <div className="flex gap-2">
+          <CSVUploadDialog type="warehouses" invalidateKey="/api/warehouses" />
+          <Button variant="outline" size="sm" onClick={handleExportCSV} data-testid="button-export-warehouses">
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <AddWarehouseDialog
+            trigger={
+              <Button data-testid="button-add-warehouse">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Warehouse
+              </Button>
+            }
+          />
+        </div>
       </div>
 
       {isLoading ? (

@@ -31,23 +31,28 @@ export interface IStorage {
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<void>;
   searchProducts(query: string): Promise<Product[]>;
+  bulkCreateProducts(products: InsertProduct[]): Promise<Product[]>;
   
   getAllWarehouses(): Promise<Warehouse[]>;
   getWarehouse(id: string): Promise<Warehouse | undefined>;
   createWarehouse(warehouse: InsertWarehouse): Promise<Warehouse>;
   updateWarehouse(id: string, warehouse: Partial<InsertWarehouse>): Promise<Warehouse | undefined>;
   deleteWarehouse(id: string): Promise<void>;
+  bulkCreateWarehouses(warehouses: InsertWarehouse[]): Promise<Warehouse[]>;
   
   getAllSuppliers(): Promise<Supplier[]>;
   getSupplier(id: string): Promise<Supplier | undefined>;
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
   updateSupplier(id: string, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined>;
   deleteSupplier(id: string): Promise<void>;
+  bulkCreateSuppliers(suppliers: InsertSupplier[]): Promise<Supplier[]>;
   
   getInventoryByProduct(productId: string): Promise<InventoryLevel[]>;
   getInventoryByWarehouse(warehouseId: string): Promise<InventoryLevel[]>;
   getLowStockAlerts(): Promise<Array<InventoryLevel & { product: Product }>>;
   updateInventoryLevel(data: InsertInventoryLevel): Promise<InventoryLevel>;
+  bulkUpdateInventoryLevels(levels: InsertInventoryLevel[]): Promise<InventoryLevel[]>;
+  getAllInventoryLevels(): Promise<InventoryLevel[]>;
   
   createStockMovement(movement: InsertStockMovement): Promise<StockMovement>;
   getStockMovements(filters?: { productId?: string; warehouseId?: string; type?: string }): Promise<StockMovement[]>;
@@ -124,6 +129,11 @@ export class DatabaseStorage implements IStorage {
       );
   }
 
+  async bulkCreateProducts(productList: InsertProduct[]): Promise<Product[]> {
+    if (productList.length === 0) return [];
+    return await db.insert(products).values(productList).returning();
+  }
+
   async getAllWarehouses(): Promise<Warehouse[]> {
     return await db.select().from(warehouses);
   }
@@ -151,6 +161,11 @@ export class DatabaseStorage implements IStorage {
     await db.delete(warehouses).where(eq(warehouses.id, id));
   }
 
+  async bulkCreateWarehouses(warehouseList: InsertWarehouse[]): Promise<Warehouse[]> {
+    if (warehouseList.length === 0) return [];
+    return await db.insert(warehouses).values(warehouseList).returning();
+  }
+
   async getAllSuppliers(): Promise<Supplier[]> {
     return await db.select().from(suppliers);
   }
@@ -176,6 +191,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSupplier(id: string): Promise<void> {
     await db.delete(suppliers).where(eq(suppliers.id, id));
+  }
+
+  async bulkCreateSuppliers(supplierList: InsertSupplier[]): Promise<Supplier[]> {
+    if (supplierList.length === 0) return [];
+    return await db.insert(suppliers).values(supplierList).returning();
   }
 
   async getInventoryByProduct(productId: string): Promise<InventoryLevel[]> {
@@ -249,6 +269,21 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return newInventory;
     }
+  }
+
+  async bulkUpdateInventoryLevels(levels: InsertInventoryLevel[]): Promise<InventoryLevel[]> {
+    if (levels.length === 0) return [];
+    
+    const results: InventoryLevel[] = [];
+    for (const level of levels) {
+      const result = await this.updateInventoryLevel(level);
+      results.push(result);
+    }
+    return results;
+  }
+
+  async getAllInventoryLevels(): Promise<InventoryLevel[]> {
+    return await db.select().from(inventoryLevels);
   }
 
   async createStockMovement(movement: InsertStockMovement): Promise<StockMovement> {

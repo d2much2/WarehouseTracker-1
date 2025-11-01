@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
-import { Package, TrendingUp, AlertTriangle, Warehouse } from "lucide-react";
+import { Package, TrendingUp, AlertTriangle, Warehouse, Download } from "lucide-react";
+import { CSVUploadDialog } from "@/components/csv-upload-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
@@ -41,6 +43,10 @@ export default function Reports() {
       window.location.href = "/api/login";
     }, 500);
   }
+
+  const handleExportInventoryCSV = () => {
+    window.location.href = "/api/csv/download/inventory";
+  };
 
   const isLoading = kpisLoading || productsLoading || warehousesLoading;
 
@@ -98,9 +104,18 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold">Reports & Analytics</h1>
-        <p className="text-muted-foreground mt-1">Insights and trends for your inventory</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold">Reports & Analytics</h1>
+          <p className="text-muted-foreground mt-1">Insights and trends for your inventory</p>
+        </div>
+        <div className="flex gap-2">
+          <CSVUploadDialog type="inventory" invalidateKey="/api/dashboard/kpis" />
+          <Button variant="outline" size="sm" onClick={handleExportInventoryCSV} data-testid="button-export-inventory">
+            <Download className="h-4 w-4 mr-2" />
+            Export Inventory CSV
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (

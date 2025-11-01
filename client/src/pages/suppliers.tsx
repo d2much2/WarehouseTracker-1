@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Plus, MoreHorizontal } from "lucide-react";
+import { Search, Plus, MoreHorizontal, Download } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AddSupplierDialog } from "@/components/add-supplier-dialog";
+import { CSVUploadDialog } from "@/components/csv-upload-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -113,6 +114,10 @@ export default function Suppliers() {
     setSupplierToEdit(supplier);
   };
 
+  const handleExportCSV = () => {
+    window.location.href = "/api/csv/download/suppliers";
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -120,14 +125,21 @@ export default function Suppliers() {
           <h1 className="text-3xl font-semibold">Suppliers</h1>
           <p className="text-muted-foreground mt-1">Manage your supplier contacts and information</p>
         </div>
-        <AddSupplierDialog
-          trigger={
-            <Button data-testid="button-add-supplier">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Supplier
-            </Button>
-          }
-        />
+        <div className="flex gap-2">
+          <CSVUploadDialog type="suppliers" invalidateKey="/api/suppliers" />
+          <Button variant="outline" size="sm" onClick={handleExportCSV} data-testid="button-export-suppliers">
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <AddSupplierDialog
+            trigger={
+              <Button data-testid="button-add-supplier">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Supplier
+              </Button>
+            }
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
