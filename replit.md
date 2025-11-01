@@ -53,6 +53,8 @@ Preferred communication style: Simple, everyday language.
 - `/api/stock-movements/*` - Stock movement history and recording
 - `/api/dashboard/kpis` - Dashboard analytics and KPIs
 - `/api/auth/*` - Authentication endpoints
+- `/api/csv/upload/*` - CSV bulk import endpoints for products, warehouses, suppliers, and inventory
+- `/api/csv/download/*` - CSV export endpoints for data download
 
 **Authentication & Authorization:**
 - Replit Auth integration using OpenID Connect (OIDC)
@@ -118,6 +120,7 @@ Preferred communication style: Simple, everyday language.
 - date-fns for date formatting and manipulation
 - Lucide React for consistent iconography
 - cmdk for command palette functionality
+- papaparse for CSV parsing and generation
 
 **Build & Development:**
 - TypeScript strict mode enabled
