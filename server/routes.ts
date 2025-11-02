@@ -10,6 +10,7 @@ import {
   insertSupplierSchema,
   insertStockMovementSchema,
   insertInventoryLevelSchema,
+  insertMessageSchema,
 } from "@shared/schema";
 import { z } from "zod";
 import Papa from "papaparse";
@@ -477,6 +478,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching dashboard KPIs:", error);
       res.status(500).json({ message: "Failed to fetch dashboard KPIs" });
+    }
+  });
+
+  app.post("/api/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const data = insertMessageSchema.parse({
+        userId: req.user.id,
+        content: req.body.content,
+      });
+      
+      const message = await storage.createMessage(data);
+      const user = await storage.getUser(message.userId);
+      
+      if (wss && user) {
+        broadcastToClients(wss, {
+          type: "chat_message",
+          data: {
+            id: message.id,
+            userId: user.id,
+            userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown',
+            userEmail: user.email || '',
+            content: message.content,
+            createdAt: message.createdAt.toISOString(),
+          },
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
+      res.status(201).json(message);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating message:", error);
+      res.status(500).json({ message: "Failed to create message" });
+    }
+  });
+
+  app.get("/api/messages", isAuthenticated, async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const messages = await storage.getRecentMessages(limit);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
     }
   });
 
