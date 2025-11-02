@@ -1,4 +1,5 @@
 import { createContext, useContext, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { queryClient } from "@/lib/queryClient";
 import type { WebSocketMessage } from "@shared/websocket-types";
@@ -12,6 +13,10 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
+  const { data: currentUser } = useQuery<{ id: string }>({
+    queryKey: ["/api/auth/user"],
+  });
+
   const handleMessage = useCallback((message: WebSocketMessage) => {
     console.log("Received WebSocket message:", message);
 
@@ -55,11 +60,19 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
       case "chat_message":
         queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+        if (message.data?.recipientId) {
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/messages/conversation", message.data.userId] 
+          });
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/messages/conversation", message.data.recipientId] 
+          });
+        }
         break;
     }
   }, []);
 
-  const { isConnected, connectionStatus, sendMessage } = useWebSocket(handleMessage);
+  const { isConnected, connectionStatus, sendMessage } = useWebSocket(handleMessage, currentUser?.id);
 
   return (
     <WebSocketContext.Provider value={{ isConnected, connectionStatus, sendMessage }}>

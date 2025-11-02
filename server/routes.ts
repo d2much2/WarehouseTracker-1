@@ -785,7 +785,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   wss = new WebSocketServer({ server: httpServer, path: "/ws" });
   
-  wss.on("connection", (ws: WebSocket) => {
+  wss.on("connection", (ws: WebSocket & { userId?: string }, req) => {
     console.log("WebSocket client connected");
     
     ws.send(JSON.stringify({
@@ -799,6 +799,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (data.type === "pong") {
           console.log("Received pong from client");
+        }
+        
+        if (data.type === "auth" && data.userId) {
+          ws.userId = data.userId;
+          console.log(`WebSocket client authenticated as user ${data.userId}`);
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);

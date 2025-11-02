@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { WebSocketMessage } from "@shared/websocket-types";
 
-export function useWebSocket(onMessage?: (message: WebSocketMessage) => void) {
+export function useWebSocket(onMessage?: (message: WebSocketMessage) => void, userId?: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected">("disconnected");
   const wsRef = useRef<WebSocket | null>(null);
@@ -27,6 +27,14 @@ export function useWebSocket(onMessage?: (message: WebSocketMessage) => void) {
       setIsConnected(true);
       setConnectionStatus("connected");
       reconnectAttempts.current = 0;
+      
+      if (userId) {
+        ws.send(JSON.stringify({
+          type: "auth",
+          userId,
+          timestamp: new Date().toISOString(),
+        }));
+      }
     };
 
     ws.onmessage = (event) => {
@@ -64,7 +72,7 @@ export function useWebSocket(onMessage?: (message: WebSocketMessage) => void) {
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
     };
-  }, [onMessage]);
+  }, [onMessage, userId]);
 
   useEffect(() => {
     connect();
