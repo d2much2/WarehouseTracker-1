@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { WebSocketProvider, useWebSocketContext } from "@/contexts/WebSocketContext";
 import { WebSocketStatus } from "@/components/websocket-status";
 import { MessagingPanel } from "@/components/messaging-panel";
+import { LoadingPage } from "@/components/loading-page";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 import Dashboard from "@/pages/dashboard";
@@ -32,11 +33,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Skeleton className="h-96 w-96" />
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (!isAuthenticated) {
