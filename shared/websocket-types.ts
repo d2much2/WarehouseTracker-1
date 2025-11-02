@@ -58,6 +58,7 @@ export interface ChatMessage extends WebSocketMessage {
     userId: string;
     userName: string;
     userEmail: string;
+    recipientId: string | null;
     content: string;
     createdAt: string;
   };
