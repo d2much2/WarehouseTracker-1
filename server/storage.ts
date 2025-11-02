@@ -5,6 +5,7 @@ import {
   suppliers,
   inventoryLevels,
   stockMovements,
+  messages,
   type User,
   type UpsertUser,
   type Product,
@@ -17,6 +18,8 @@ import {
   type InsertInventoryLevel,
   type StockMovement,
   type InsertStockMovement,
+  type Message,
+  type InsertMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, desc, sql, sum, count } from "drizzle-orm";
@@ -70,6 +73,9 @@ export interface IStorage {
   createStockMovement(movement: InsertStockMovement): Promise<StockMovement>;
   getStockMovements(filters?: { productId?: string; warehouseId?: string; type?: string }): Promise<StockMovement[]>;
   getRecentMovements(limit?: number): Promise<StockMovement[]>;
+  
+  createMessage(message: InsertMessage): Promise<Message>;
+  getRecentMessages(limit?: number): Promise<Array<Message & { user: User }>>;
   
   getDashboardKPIs(): Promise<{
     totalProducts: number;
@@ -498,6 +504,31 @@ export class DatabaseStorage implements IStorage {
       .from(stockMovements)
       .orderBy(desc(stockMovements.createdAt))
       .limit(limit);
+  }
+
+  async createMessage(messageData: InsertMessage): Promise<Message> {
+    const [message] = await db
+      .insert(messages)
+      .values(messageData)
+      .returning();
+    return message;
+  }
+
+  async getRecentMessages(limit: number = 50): Promise<Array<Message & { user: User }>> {
+    const results = await db
+      .select({
+        message: messages,
+        user: users,
+      })
+      .from(messages)
+      .innerJoin(users, eq(messages.userId, users.id))
+      .orderBy(desc(messages.createdAt))
+      .limit(limit);
+    
+    return results.map(row => ({
+      ...row.message,
+      user: row.user,
+    }));
   }
 
   async getDashboardKPIs(): Promise<{

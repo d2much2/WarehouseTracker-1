@@ -3,6 +3,7 @@ export type WebSocketMessageType =
   | "stock_movement_created"
   | "product_updated"
   | "warehouse_updated"
+  | "chat_message"
   | "ping"
   | "pong";
 
@@ -47,5 +48,17 @@ export interface WarehouseUpdatedMessage extends WebSocketMessage {
   type: "warehouse_updated";
   data: {
     id: string;
+  };
+}
+
+export interface ChatMessage extends WebSocketMessage {
+  type: "chat_message";
+  data: {
+    id: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    content: string;
+    createdAt: string;
   };
 }

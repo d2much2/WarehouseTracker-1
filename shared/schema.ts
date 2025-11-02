@@ -91,6 +91,14 @@ export const stockMovements = pgTable("stock_movements", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Messages table
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Insert schemas
 export const upsertUserSchema = createInsertSchema(users);
 export const insertWarehouseSchema = createInsertSchema(warehouses).omit({ id: true, createdAt: true });
@@ -98,6 +106,7 @@ export const insertSupplierSchema = createInsertSchema(suppliers).omit({ id: tru
 export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true });
 export const insertInventoryLevelSchema = createInsertSchema(inventoryLevels).omit({ id: true, updatedAt: true });
 export const insertStockMovementSchema = createInsertSchema(stockMovements).omit({ id: true, createdAt: true });
+export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
 
 // Types
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
@@ -117,3 +126,6 @@ export type InventoryLevel = typeof inventoryLevels.$inferSelect;
 
 export type InsertStockMovement = z.infer<typeof insertStockMovementSchema>;
 export type StockMovement = typeof stockMovements.$inferSelect;
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
