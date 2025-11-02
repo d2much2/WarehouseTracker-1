@@ -491,6 +491,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/device-info", isAuthenticated, async (req, res) => {
+    try {
+      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
+      const userAgent = req.headers['user-agent'] || 'Unknown';
+      
+      res.json({
+        ip: Array.isArray(ip) ? ip[0] : ip.toString().split(',')[0].trim(),
+        userAgent,
+      });
+    } catch (error) {
+      console.error("Error fetching device info:", error);
+      res.status(500).json({ message: "Failed to fetch device info" });
+    }
+  });
+
   app.post("/api/messages", isAuthenticated, async (req: any, res) => {
     try {
       const data = insertMessageSchema.parse({

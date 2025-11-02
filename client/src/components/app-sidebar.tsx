@@ -26,6 +26,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { Monitor, Globe } from "lucide-react";
 
 const mainMenuItems = [
   {
@@ -82,9 +84,26 @@ export function AppSidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
 
+  const { data: deviceInfo } = useQuery<{ ip: string; userAgent: string }>({
+    queryKey: ["/api/device-info"],
+    staleTime: 5 * 60 * 1000,
+  });
+
   const getInitials = (firstName?: string | null, lastName?: string | null) => {
     if (!firstName && !lastName) return "U";
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
+  };
+
+  const getDeviceName = (userAgent: string) => {
+    if (!userAgent) return "Unknown Device";
+    
+    if (userAgent.includes("Windows")) return "Windows PC";
+    if (userAgent.includes("Mac")) return "Mac";
+    if (userAgent.includes("Linux")) return "Linux PC";
+    if (userAgent.includes("Android")) return "Android Device";
+    if (userAgent.includes("iPhone") || userAgent.includes("iPad")) return "iOS Device";
+    
+    return "Unknown Device";
   };
 
   const handleLogout = () => {
@@ -148,6 +167,24 @@ export function AppSidebar() {
               </Badge>
             </div>
           </div>
+          
+          {deviceInfo && (
+            <div className="space-y-2 text-xs text-muted-foreground border-t pt-3">
+              <div className="flex items-center gap-2">
+                <Monitor className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate" data-testid="text-device-name">
+                  {getDeviceName(deviceInfo.userAgent)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Globe className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate font-mono" data-testid="text-device-ip">
+                  {deviceInfo.ip}
+                </span>
+              </div>
+            </div>
+          )}
+          
           <Button
             variant="outline"
             size="sm"
