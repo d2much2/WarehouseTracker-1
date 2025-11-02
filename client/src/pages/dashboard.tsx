@@ -63,6 +63,8 @@ export default function Dashboard() {
     type: movement.type,
     quantity: movement.quantity,
     warehouse: movement.warehouseId,
+    row: movement.row,
+    shelf: movement.shelf,
     user: movement.userId,
     timestamp: formatDistanceToNow(new Date(movement.createdAt), { addSuffix: true }),
   })) || [];
@@ -74,6 +76,8 @@ export default function Dashboard() {
     currentStock: alert.quantity,
     threshold: alert.product.lowStockThreshold,
     warehouse: alert.warehouseId,
+    row: alert.row,
+    shelf: alert.shelf,
   })) || [];
 
   return (

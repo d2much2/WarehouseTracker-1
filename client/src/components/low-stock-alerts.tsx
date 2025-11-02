@@ -10,6 +10,8 @@ interface LowStockAlert {
   currentStock: number;
   threshold: number;
   warehouse: string;
+  row?: string | null;
+  shelf?: string | null;
 }
 
 interface LowStockAlertsProps {
@@ -57,6 +59,11 @@ export function LowStockAlerts({ alerts }: LowStockAlertsProps) {
                     <span className="text-muted-foreground"> / {alert.threshold} units</span>
                   </span>
                 </div>
+                {(alert.row || alert.shelf) && (
+                  <div className="mt-1 text-xs text-muted-foreground font-mono">
+                    Row: {alert.row || "—"} / Shelf: {alert.shelf || "—"}
+                  </div>
+                )}
               </div>
               <Button
                 size="sm"

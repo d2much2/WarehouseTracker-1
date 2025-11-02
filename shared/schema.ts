@@ -71,6 +71,8 @@ export const inventoryLevels = pgTable("inventory_levels", {
   productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
   warehouseId: varchar("warehouse_id").notNull().references(() => warehouses.id, { onDelete: "cascade" }),
   quantity: integer("quantity").notNull().default(0),
+  row: text("row"),
+  shelf: text("shelf"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
@@ -82,6 +84,8 @@ export const stockMovements = pgTable("stock_movements", {
   targetWarehouseId: varchar("target_warehouse_id").references(() => warehouses.id),
   type: movementTypeEnum("type").notNull(),
   quantity: integer("quantity").notNull(),
+  row: text("row"),
+  shelf: text("shelf"),
   notes: text("notes"),
   userId: varchar("user_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),

@@ -443,6 +443,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           productId: row.productId,
           warehouseId: row.warehouseId,
           quantity: parseInt(row.quantity),
+          row: row.row || undefined,
+          shelf: row.shelf || undefined,
         })
       );
 

@@ -66,6 +66,8 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
       productId: undefined as any,
       warehouseId: undefined as any,
       quantity: 1,
+      row: undefined,
+      shelf: undefined,
       targetWarehouseId: undefined,
       notes: undefined,
     },
@@ -247,6 +249,46 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
                   )}
                 />
               )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="row"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Row (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., A1"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-row"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="shelf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Shelf (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., S3"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-shelf"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}

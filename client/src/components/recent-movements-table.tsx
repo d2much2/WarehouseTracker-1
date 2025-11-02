@@ -15,6 +15,8 @@ interface Movement {
   type: "in" | "out" | "transfer" | "adjustment";
   quantity: number;
   warehouse: string;
+  row?: string | null;
+  shelf?: string | null;
   user: string;
   timestamp: string;
 }
@@ -45,6 +47,7 @@ export function RecentMovementsTable({ movements }: RecentMovementsTableProps) {
                 <TableHead className="text-sm font-medium uppercase tracking-wide">Type</TableHead>
                 <TableHead className="text-sm font-medium uppercase tracking-wide">Quantity</TableHead>
                 <TableHead className="text-sm font-medium uppercase tracking-wide">Warehouse</TableHead>
+                <TableHead className="text-sm font-medium uppercase tracking-wide">Location</TableHead>
                 <TableHead className="text-sm font-medium uppercase tracking-wide">User</TableHead>
                 <TableHead className="text-sm font-medium uppercase tracking-wide">Timestamp</TableHead>
               </TableRow>
@@ -62,6 +65,13 @@ export function RecentMovementsTable({ movements }: RecentMovementsTableProps) {
                     {movement.type === "out" ? "-" : "+"}{movement.quantity}
                   </TableCell>
                   <TableCell>{movement.warehouse}</TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {movement.row || movement.shelf ? (
+                      <span>{movement.row || "—"} / {movement.shelf || "—"}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{movement.user}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{movement.timestamp}</TableCell>
                 </TableRow>
