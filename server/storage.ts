@@ -22,7 +22,7 @@ import {
   type InsertMessage,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, desc, sql, sum, count, alias } from "drizzle-orm";
+import { eq, and, or, desc, sql, sum, count } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -539,18 +539,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getConversationMessages(userId: string, otherUserId: string, limit: number = 100): Promise<Array<Message & { user: User; recipient: User | null }>> {
-    const sender = alias(users, 'sender');
-    const recipient = alias(users, 'recipient');
-    
-    const results = await db
-      .select({
-        message: messages,
-        sender: sender,
-        recipient: recipient,
-      })
+    const messageList = await db
+      .select()
       .from(messages)
-      .innerJoin(sender, eq(messages.userId, sender.id))
-      .leftJoin(recipient, eq(messages.recipientId, recipient.id))
       .where(
         or(
           and(
@@ -566,11 +557,20 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(messages.createdAt))
       .limit(limit);
     
-    return results.map(row => ({
-      ...row.message,
-      user: row.sender,
-      recipient: row.recipient,
-    }));
+    const enrichedMessages = await Promise.all(
+      messageList.map(async (msg) => {
+        const sender = await this.getUser(msg.userId);
+        const recipient = msg.recipientId ? await this.getUser(msg.recipientId) : null;
+        
+        return {
+          ...msg,
+          user: sender!,
+          recipient,
+        };
+      })
+    );
+    
+    return enrichedMessages;
   }
 
   async getDashboardKPIs(): Promise<{

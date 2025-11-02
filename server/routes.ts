@@ -481,10 +481,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/users", isAuthenticated, async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
   app.post("/api/messages", isAuthenticated, async (req: any, res) => {
     try {
       const data = insertMessageSchema.parse({
         userId: req.user.id,
+        recipientId: req.body.recipientId || null,
         content: req.body.content,
       });
       
@@ -492,18 +503,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(message.userId);
       
       if (wss && user) {
-        broadcastToClients(wss, {
-          type: "chat_message",
-          data: {
-            id: message.id,
-            userId: user.id,
-            userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown',
-            userEmail: user.email || '',
-            content: message.content,
-            createdAt: message.createdAt.toISOString(),
-          },
-          timestamp: new Date().toISOString(),
-        });
+        const messageData = {
+          id: message.id,
+          userId: user.id,
+          userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown',
+          userEmail: user.email || '',
+          recipientId: message.recipientId,
+          content: message.content,
+          createdAt: message.createdAt.toISOString(),
+        };
+        
+        if (message.recipientId) {
+          wss.clients.forEach((client: any) => {
+            if (client.readyState === WebSocket.OPEN) {
+              if (client.userId === message.recipientId || client.userId === user.id) {
+                client.send(JSON.stringify({
+                  type: "chat_message",
+                  data: messageData,
+                  timestamp: new Date().toISOString(),
+                }));
+              }
+            }
+          });
+        } else {
+          broadcastToClients(wss, {
+            type: "chat_message",
+            data: messageData,
+            timestamp: new Date().toISOString(),
+          });
+        }
       }
       
       res.status(201).json(message);
@@ -524,6 +552,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.get("/api/messages/conversation/:userId", isAuthenticated, async (req: any, res) => {
+    try {
+      const otherUserId = req.params.userId;
+      const currentUserId = req.user.id;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      
+      const messages = await storage.getConversationMessages(currentUserId, otherUserId, limit);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching conversation messages:", error);
+      res.status(500).json({ message: "Failed to fetch conversation messages" });
     }
   });
 
