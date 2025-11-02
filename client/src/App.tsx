@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -10,6 +11,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
 import { WebSocketProvider, useWebSocketContext } from "@/contexts/WebSocketContext";
 import { WebSocketStatus } from "@/components/websocket-status";
+import { MessagingPanel } from "@/components/messaging-panel";
+import { Button } from "@/components/ui/button";
+import { MessageSquare } from "lucide-react";
 import Dashboard from "@/pages/dashboard";
 import Products from "@/pages/products";
 import Warehouses from "@/pages/warehouses";
@@ -43,6 +47,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
 function AuthenticatedRoutesInner() {
   const { connectionStatus } = useWebSocketContext();
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
@@ -60,7 +65,7 @@ function AuthenticatedRoutesInner() {
               <ThemeToggle />
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-auto p-6 relative">
             <Switch>
               <Route path="/" component={Dashboard} />
               <Route path="/products" component={Products} />
@@ -73,6 +78,23 @@ function AuthenticatedRoutesInner() {
               <Route path="/settings" component={Settings} />
               <Route component={NotFound} />
             </Switch>
+
+            {isChatOpen && (
+              <div className="fixed bottom-4 right-4 w-96 h-[600px] shadow-lg z-50">
+                <MessagingPanel onClose={() => setIsChatOpen(false)} />
+              </div>
+            )}
+
+            {!isChatOpen && (
+              <Button
+                className="fixed bottom-4 right-4 rounded-full h-14 w-14 shadow-lg z-50"
+                size="icon"
+                onClick={() => setIsChatOpen(true)}
+                data-testid="button-open-chat"
+              >
+                <MessageSquare className="h-6 w-6" />
+              </Button>
+            )}
           </main>
         </div>
       </div>

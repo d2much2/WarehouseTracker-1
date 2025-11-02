@@ -52,6 +52,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           });
         }
         break;
+
+      case "chat_message":
+        queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+        break;
     }
   }, []);
 
