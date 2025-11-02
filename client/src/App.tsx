@@ -80,19 +80,19 @@ function AuthenticatedRoutesInner() {
             </Switch>
 
             {isChatOpen && (
-              <div className="fixed bottom-4 right-4 w-96 h-[600px] shadow-lg z-50">
+              <div className="fixed bottom-6 right-6 w-[28rem] h-[36rem] shadow-2xl z-[100] rounded-lg overflow-hidden border">
                 <MessagingPanel onClose={() => setIsChatOpen(false)} />
               </div>
             )}
 
             {!isChatOpen && (
               <Button
-                className="fixed bottom-4 right-4 rounded-full h-14 w-14 shadow-lg z-50"
+                className="fixed bottom-6 right-6 rounded-full h-16 w-16 shadow-2xl z-[100] hover:scale-110 transition-transform"
                 size="icon"
                 onClick={() => setIsChatOpen(true)}
                 data-testid="button-open-chat"
               >
-                <MessageSquare className="h-6 w-6" />
+                <MessageSquare className="h-7 w-7" />
               </Button>
             )}
           </main>
