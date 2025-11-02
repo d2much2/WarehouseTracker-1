@@ -22,7 +22,7 @@ import {
   type InsertMessage,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, desc, sql, sum, count } from "drizzle-orm";
+import { eq, and, or, desc, sql, sum, count, alias } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -74,8 +74,10 @@ export interface IStorage {
   getStockMovements(filters?: { productId?: string; warehouseId?: string; type?: string }): Promise<StockMovement[]>;
   getRecentMovements(limit?: number): Promise<StockMovement[]>;
   
+  getAllUsers(): Promise<User[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   getRecentMessages(limit?: number): Promise<Array<Message & { user: User }>>;
+  getConversationMessages(userId: string, otherUserId: string, limit?: number): Promise<Array<Message & { user: User; recipient: User | null }>>;
   
   getDashboardKPIs(): Promise<{
     totalProducts: number;
@@ -506,6 +508,10 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
   async createMessage(messageData: InsertMessage): Promise<Message> {
     const [message] = await db
       .insert(messages)
@@ -522,12 +528,48 @@ export class DatabaseStorage implements IStorage {
       })
       .from(messages)
       .innerJoin(users, eq(messages.userId, users.id))
+      .where(sql`${messages.recipientId} IS NULL`)
       .orderBy(desc(messages.createdAt))
       .limit(limit);
     
     return results.map(row => ({
       ...row.message,
       user: row.user,
+    }));
+  }
+
+  async getConversationMessages(userId: string, otherUserId: string, limit: number = 100): Promise<Array<Message & { user: User; recipient: User | null }>> {
+    const sender = alias(users, 'sender');
+    const recipient = alias(users, 'recipient');
+    
+    const results = await db
+      .select({
+        message: messages,
+        sender: sender,
+        recipient: recipient,
+      })
+      .from(messages)
+      .innerJoin(sender, eq(messages.userId, sender.id))
+      .leftJoin(recipient, eq(messages.recipientId, recipient.id))
+      .where(
+        or(
+          and(
+            eq(messages.userId, userId),
+            eq(messages.recipientId, otherUserId)
+          ),
+          and(
+            eq(messages.userId, otherUserId),
+            eq(messages.recipientId, userId)
+          )
+        )
+      )
+      .orderBy(desc(messages.createdAt))
+      .limit(limit);
+    
+    return results.map(row => ({
+      ...row.message,
+      user: row.sender,
+      recipient: row.recipient,
     }));
   }
 
