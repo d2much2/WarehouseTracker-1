@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -23,6 +23,7 @@ import Movements from "@/pages/movements";
 import Alerts from "@/pages/alerts";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import Messaging from "@/pages/messaging";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,10 +49,13 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 function AuthenticatedRoutesInner() {
   const { connectionStatus } = useWebSocketContext();
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [location] = useLocation();
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
+  
+  const isMessagesPage = location === "/messages";
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
@@ -76,24 +80,29 @@ function AuthenticatedRoutesInner() {
               <Route path="/alerts" component={Alerts} />
               <Route path="/reports" component={Reports} />
               <Route path="/settings" component={Settings} />
+              <Route path="/messages" component={Messaging} />
               <Route component={NotFound} />
             </Switch>
 
-            {isChatOpen && (
-              <div className="fixed bottom-6 right-6 w-[28rem] h-[36rem] shadow-2xl z-[100] rounded-lg overflow-hidden border">
-                <MessagingPanel onClose={() => setIsChatOpen(false)} />
-              </div>
-            )}
+            {!isMessagesPage && (
+              <>
+                {isChatOpen && (
+                  <div className="fixed bottom-6 right-6 w-[28rem] h-[36rem] shadow-2xl z-[100] rounded-lg overflow-hidden border">
+                    <MessagingPanel onClose={() => setIsChatOpen(false)} />
+                  </div>
+                )}
 
-            {!isChatOpen && (
-              <Button
-                className="fixed bottom-6 right-6 rounded-full h-16 w-16 shadow-2xl z-[100] hover:scale-110 transition-transform"
-                size="icon"
-                onClick={() => setIsChatOpen(true)}
-                data-testid="button-open-chat"
-              >
-                <MessageSquare className="h-7 w-7" />
-              </Button>
+                {!isChatOpen && (
+                  <Button
+                    className="fixed bottom-6 right-6 rounded-full h-16 w-16 shadow-2xl z-[100] hover:scale-110 transition-transform"
+                    size="icon"
+                    onClick={() => setIsChatOpen(true)}
+                    data-testid="button-open-chat"
+                  >
+                    <MessageSquare className="h-7 w-7" />
+                  </Button>
+                )}
+              </>
             )}
           </main>
         </div>

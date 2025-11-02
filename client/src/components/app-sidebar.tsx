@@ -8,6 +8,7 @@ import {
   ArrowRightLeft,
   Bell,
   LogOut,
+  MessageSquare,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -56,6 +57,11 @@ const mainMenuItems = [
     title: "Alerts",
     url: "/alerts",
     icon: Bell,
+  },
+  {
+    title: "Messages",
+    url: "/messages",
+    icon: MessageSquare,
   },
 ];
 
