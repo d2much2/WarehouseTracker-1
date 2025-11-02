@@ -8,6 +8,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
+import { WebSocketProvider, useWebSocketContext } from "@/contexts/WebSocketContext";
+import { WebSocketStatus } from "@/components/websocket-status";
 import Dashboard from "@/pages/dashboard";
 import Products from "@/pages/products";
 import Warehouses from "@/pages/warehouses";
@@ -39,7 +41,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function AuthenticatedRoutes() {
+function AuthenticatedRoutesInner() {
+  const { connectionStatus } = useWebSocketContext();
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
@@ -52,7 +55,10 @@ function AuthenticatedRoutes() {
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="flex items-center justify-between gap-4 p-4 border-b">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <ThemeToggle />
+            <div className="flex items-center gap-3">
+              <WebSocketStatus connectionStatus={connectionStatus} />
+              <ThemeToggle />
+            </div>
           </header>
           <main className="flex-1 overflow-auto p-6">
             <Switch>
@@ -71,6 +77,14 @@ function AuthenticatedRoutes() {
         </div>
       </div>
     </SidebarProvider>
+  );
+}
+
+function AuthenticatedRoutes() {
+  return (
+    <WebSocketProvider>
+      <AuthenticatedRoutesInner />
+    </WebSocketProvider>
   );
 }
 

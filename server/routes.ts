@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import {
@@ -11,8 +12,20 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import Papa from "papaparse";
+import type { WebSocketMessage } from "@shared/websocket-types";
+
+function broadcastToClients(wss: WebSocketServer, message: WebSocketMessage) {
+  const payload = JSON.stringify(message);
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(payload);
+    }
+  });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  let wss: WebSocketServer;
+  
   // Health check endpoint for deployment
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
@@ -66,6 +79,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertProductSchema.parse(req.body);
       const newProduct = await storage.createProduct(validatedData);
+      
+      if (wss) {
+        broadcastToClients(wss, {
+          type: "product_updated",
+          data: { id: newProduct.id },
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
       res.status(201).json(newProduct);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -83,6 +105,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedProduct) {
         return res.status(404).json({ message: "Product not found" });
       }
+      
+      if (wss) {
+        broadcastToClients(wss, {
+          type: "product_updated",
+          data: { id: updatedProduct.id },
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
       res.json(updatedProduct);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -95,7 +126,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/products/:id", isAuthenticated, async (req, res) => {
     try {
-      await storage.deleteProduct(req.params.id);
+      const productId = req.params.id;
+      await storage.deleteProduct(productId);
+      
+      if (wss) {
+        broadcastToClients(wss, {
+          type: "product_updated",
+          data: { id: productId },
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -130,6 +171,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertWarehouseSchema.parse(req.body);
       const newWarehouse = await storage.createWarehouse(validatedData);
+      
+      if (wss) {
+        broadcastToClients(wss, {
+          type: "warehouse_updated",
+          data: { id: newWarehouse.id },
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
       res.status(201).json(newWarehouse);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -147,6 +197,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedWarehouse) {
         return res.status(404).json({ message: "Warehouse not found" });
       }
+      
+      if (wss) {
+        broadcastToClients(wss, {
+          type: "warehouse_updated",
+          data: { id: updatedWarehouse.id },
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
       res.json(updatedWarehouse);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -159,7 +218,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/warehouses/:id", isAuthenticated, async (req, res) => {
     try {
-      await storage.deleteWarehouse(req.params.id);
+      const warehouseId = req.params.id;
+      await storage.deleteWarehouse(warehouseId);
+      
+      if (wss) {
+        broadcastToClients(wss, {
+          type: "warehouse_updated",
+          data: { id: warehouseId },
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting warehouse:", error);
@@ -316,6 +385,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const newMovement = await storage.createStockMovement(validatedData);
+      
+      if (wss) {
+        broadcastToClients(wss, {
+          type: "stock_movement_created",
+          data: {
+            id: newMovement.id,
+            productId: newMovement.productId,
+            warehouseId: newMovement.warehouseId,
+            type: newMovement.type,
+            quantity: newMovement.quantity,
+            row: newMovement.row,
+            shelf: newMovement.shelf,
+          },
+          timestamp: new Date().toISOString(),
+        });
+        
+        broadcastToClients(wss, {
+          type: "inventory_updated",
+          data: {
+            productId: newMovement.productId,
+            warehouseId: newMovement.warehouseId,
+            quantity: 0,
+            row: newMovement.row,
+            shelf: newMovement.shelf,
+          },
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
       res.status(201).json(newMovement);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -364,6 +462,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       const createdProducts = await storage.bulkCreateProducts(validatedProducts);
+      
+      if (wss) {
+        broadcastToClients(wss, {
+          type: "product_updated",
+          data: {},
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
       res.status(201).json({ 
         message: `Successfully imported ${createdProducts.length} products`,
         count: createdProducts.length,
@@ -395,6 +502,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       const createdWarehouses = await storage.bulkCreateWarehouses(validatedWarehouses);
+      
+      if (wss) {
+        broadcastToClients(wss, {
+          type: "warehouse_updated",
+          data: {},
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
       res.status(201).json({ 
         message: `Successfully imported ${createdWarehouses.length} warehouses`,
         count: createdWarehouses.length,
@@ -459,6 +575,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       const updatedInventory = await storage.bulkUpdateInventoryLevels(validatedInventory);
+      
+      if (wss) {
+        broadcastToClients(wss, {
+          type: "inventory_updated",
+          data: {},
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
       res.status(201).json({ 
         message: `Successfully imported ${updatedInventory.length} inventory levels`,
         count: updatedInventory.length,
@@ -530,5 +655,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+  
+  wss.on("connection", (ws: WebSocket) => {
+    console.log("WebSocket client connected");
+    
+    ws.send(JSON.stringify({
+      type: "ping",
+      timestamp: new Date().toISOString(),
+    }));
+    
+    ws.on("message", (message: string) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        if (data.type === "pong") {
+          console.log("Received pong from client");
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
+      }
+    });
+    
+    ws.on("close", () => {
+      console.log("WebSocket client disconnected");
+    });
+    
+    ws.on("error", (error) => {
+      console.error("WebSocket error:", error);
+    });
+  });
+  
+  const heartbeatInterval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: "ping",
+          timestamp: new Date().toISOString(),
+        }));
+      }
+    });
+  }, 30000);
+  
+  wss.on("close", () => {
+    clearInterval(heartbeatInterval);
+  });
+  
+  (app as any).wss = wss;
+  
   return httpServer;
 }
