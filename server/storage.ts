@@ -6,6 +6,7 @@ import {
   inventoryLevels,
   stockMovements,
   messages,
+  webauthnCredentials,
   type User,
   type UpsertUser,
   type Product,
@@ -20,6 +21,8 @@ import {
   type InsertStockMovement,
   type Message,
   type InsertMessage,
+  type WebauthnCredential,
+  type InsertWebauthnCredential,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, desc, sql, sum, count } from "drizzle-orm";
@@ -78,6 +81,14 @@ export interface IStorage {
   createMessage(message: InsertMessage): Promise<Message>;
   getRecentMessages(limit?: number): Promise<Array<Message & { user: User }>>;
   getConversationMessages(userId: string, otherUserId: string, limit?: number): Promise<Array<Message & { user: User; recipient: User | null }>>;
+  
+  getUserByEmail(email: string): Promise<User | undefined>;
+  enableWebAuthnForUser(userId: string): Promise<void>;
+  createWebAuthnCredential(credential: InsertWebauthnCredential): Promise<WebauthnCredential>;
+  getWebAuthnCredentials(userId: string): Promise<WebauthnCredential[]>;
+  getWebAuthnCredentialById(id: string): Promise<WebauthnCredential | undefined>;
+  updateWebAuthnCredentialCounter(id: string, counter: number): Promise<void>;
+  deleteWebAuthnCredential(id: string): Promise<void>;
   
   getDashboardKPIs(): Promise<{
     totalProducts: number;
@@ -571,6 +582,56 @@ export class DatabaseStorage implements IStorage {
     );
     
     return enrichedMessages;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async enableWebAuthnForUser(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ webauthnEnabled: 1, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async createWebAuthnCredential(credential: InsertWebauthnCredential): Promise<WebauthnCredential> {
+    const [newCredential] = await db
+      .insert(webauthnCredentials)
+      .values({
+        ...credential,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return newCredential;
+  }
+
+  async getWebAuthnCredentials(userId: string): Promise<WebauthnCredential[]> {
+    return await db
+      .select()
+      .from(webauthnCredentials)
+      .where(eq(webauthnCredentials.userId, userId));
+  }
+
+  async getWebAuthnCredentialById(id: string): Promise<WebauthnCredential | undefined> {
+    const [credential] = await db
+      .select()
+      .from(webauthnCredentials)
+      .where(eq(webauthnCredentials.id, id));
+    return credential;
+  }
+
+  async updateWebAuthnCredentialCounter(id: string, counter: number): Promise<void> {
+    await db
+      .update(webauthnCredentials)
+      .set({ counter, updatedAt: new Date() })
+      .where(eq(webauthnCredentials.id, id));
+  }
+
+  async deleteWebAuthnCredential(id: string): Promise<void> {
+    await db.delete(webauthnCredentials).where(eq(webauthnCredentials.id, id));
   }
 
   async getDashboardKPIs(): Promise<{
