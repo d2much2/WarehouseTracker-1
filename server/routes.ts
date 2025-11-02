@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import { networkInterfaces } from "os";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import {
@@ -29,6 +30,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint for deployment
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
+  });
+
+  // Network information endpoint
+  app.get("/api/network-info", (_req, res) => {
+    try {
+      const interfaces = networkInterfaces();
+      const addresses: Array<{ name: string; address: string; family: string; internal: boolean }> = [];
+      
+      for (const [name, nets] of Object.entries(interfaces)) {
+        if (nets) {
+          for (const net of nets) {
+            if (net.family === 'IPv4' && !net.internal) {
+              addresses.push({
+                name,
+                address: net.address,
+                family: net.family,
+                internal: net.internal,
+              });
+            }
+          }
+        }
+      }
+
+      const port = process.env.PORT || 5000;
+      const hostname = process.env.REPL_SLUG || 'warehouse-inventory';
+      
+      res.json({
+        addresses,
+        port,
+        hostname,
+        webSocketUrl: addresses.length > 0 ? `ws://${addresses[0].address}:${port}/ws` : null,
+        httpUrl: addresses.length > 0 ? `http://${addresses[0].address}:${port}` : null,
+      });
+    } catch (error) {
+      console.error("Error fetching network info:", error);
+      res.status(500).json({ message: "Failed to fetch network information" });
+    }
   });
 
   await setupAuth(app);

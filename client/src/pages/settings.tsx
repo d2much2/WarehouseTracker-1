@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NetworkInfo } from "@/components/network-info";
 import { User, Settings as SettingsIcon } from "lucide-react";
 
 export default function Settings() {
@@ -67,6 +68,8 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+
+          <NetworkInfo />
 
           <Card>
             <CardContent className="p-16 text-center">
