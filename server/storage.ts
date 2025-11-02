@@ -54,6 +54,18 @@ export interface IStorage {
   updateInventoryLevel(data: InsertInventoryLevel): Promise<InventoryLevel>;
   bulkUpdateInventoryLevels(levels: InsertInventoryLevel[]): Promise<InventoryLevel[]>;
   getAllInventoryLevels(): Promise<InventoryLevel[]>;
+  getAllInventoryWithDetails(): Promise<Array<{
+    productId: string;
+    productName: string;
+    productSku: string;
+    warehouseId: string;
+    warehouseName: string;
+    warehouseLocation: string;
+    quantity: number;
+    row: string | null;
+    shelf: string | null;
+    lowStockThreshold: number;
+  }>>;
   
   createStockMovement(movement: InsertStockMovement): Promise<StockMovement>;
   getStockMovements(filters?: { productId?: string; warehouseId?: string; type?: string }): Promise<StockMovement[]>;
@@ -320,6 +332,27 @@ export class DatabaseStorage implements IStorage {
 
   async getAllInventoryLevels(): Promise<InventoryLevel[]> {
     return await db.select().from(inventoryLevels);
+  }
+
+  async getAllInventoryWithDetails() {
+    const results = await db
+      .select({
+        productId: products.id,
+        productName: products.name,
+        productSku: products.sku,
+        warehouseId: warehouses.id,
+        warehouseName: warehouses.name,
+        warehouseLocation: warehouses.location,
+        quantity: inventoryLevels.quantity,
+        row: inventoryLevels.row,
+        shelf: inventoryLevels.shelf,
+        lowStockThreshold: products.lowStockThreshold,
+      })
+      .from(inventoryLevels)
+      .innerJoin(products, eq(inventoryLevels.productId, products.id))
+      .innerJoin(warehouses, eq(inventoryLevels.warehouseId, warehouses.id));
+    
+    return results;
   }
 
   async createStockMovement(movement: InsertStockMovement): Promise<StockMovement> {

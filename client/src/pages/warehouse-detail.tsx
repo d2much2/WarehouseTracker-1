@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Search, Package, MapPin } from "lucide-react";
+import { CsvExportButton } from "@/components/csv-export-button";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import type { Warehouse, InventoryLevel, Product } from "@shared/schema";
@@ -155,14 +156,21 @@ export default function WarehouseDetail() {
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
             <CardTitle>Inventory by Location</CardTitle>
-            <div className="relative w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products, SKU, row, shelf..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-                data-testid="input-search-inventory"
+            <div className="flex items-center gap-2">
+              <div className="relative w-72">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products, SKU, row, shelf..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-inventory"
+                />
+              </div>
+              <CsvExportButton 
+                endpoint="/api/csv/download/inventory"
+                filename="inventory-export.csv"
+                size="sm"
               />
             </div>
           </div>

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CsvExportButton } from "@/components/csv-export-button";
 import { AlertTriangle, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -43,9 +44,16 @@ export default function Alerts() {
           <h1 className="text-3xl font-semibold">Low Stock Alerts</h1>
           <p className="text-muted-foreground mt-1">Monitor and manage items running low on stock</p>
         </div>
-        <Badge variant="destructive" data-testid="badge-alert-count">
-          {lowStockAlerts.length} Alerts
-        </Badge>
+        <div className="flex items-center gap-2">
+          <CsvExportButton 
+            endpoint="/api/csv/download/inventory"
+            filename="inventory-export.csv"
+            size="sm"
+          />
+          <Badge variant="destructive" data-testid="badge-alert-count">
+            {lowStockAlerts.length} Alerts
+          </Badge>
+        </div>
       </div>
 
       {isLoading ? (

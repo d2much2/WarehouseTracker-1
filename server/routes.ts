@@ -680,7 +680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/csv/download/inventory", isAuthenticated, async (req, res) => {
     try {
-      const inventory = await storage.getAllInventoryLevels();
+      const inventory = await storage.getAllInventoryWithDetails();
       const csv = Papa.unparse(inventory);
       
       res.setHeader("Content-Type", "text/csv");
