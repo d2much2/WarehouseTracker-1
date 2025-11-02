@@ -95,6 +95,7 @@ export const stockMovements = pgTable("stock_movements", {
 export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
+  recipientId: varchar("recipient_id").references(() => users.id),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
