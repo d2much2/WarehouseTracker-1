@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Products from "@/pages/products";
 import Warehouses from "@/pages/warehouses";
+import WarehouseDetail from "@/pages/warehouse-detail";
 import Suppliers from "@/pages/suppliers";
 import Movements from "@/pages/movements";
 import Alerts from "@/pages/alerts";
@@ -57,6 +58,7 @@ function AuthenticatedRoutes() {
             <Switch>
               <Route path="/" component={Dashboard} />
               <Route path="/products" component={Products} />
+              <Route path="/warehouses/:id" component={WarehouseDetail} />
               <Route path="/warehouses" component={Warehouses} />
               <Route path="/suppliers" component={Suppliers} />
               <Route path="/movements" component={Movements} />

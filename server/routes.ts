@@ -167,6 +167,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/warehouses/:id/inventory", isAuthenticated, async (req, res) => {
+    try {
+      const inventory = await storage.getWarehouseInventoryWithProducts(req.params.id);
+      res.json(inventory);
+    } catch (error) {
+      console.error("Error fetching warehouse inventory:", error);
+      res.status(500).json({ message: "Failed to fetch warehouse inventory" });
+    }
+  });
+
   app.get("/api/suppliers", isAuthenticated, async (req, res) => {
     try {
       const suppliersList = await storage.getAllSuppliers();

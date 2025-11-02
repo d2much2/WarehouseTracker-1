@@ -49,6 +49,7 @@ export interface IStorage {
   
   getInventoryByProduct(productId: string): Promise<InventoryLevel[]>;
   getInventoryByWarehouse(warehouseId: string): Promise<InventoryLevel[]>;
+  getWarehouseInventoryWithProducts(warehouseId: string): Promise<Array<InventoryLevel & { product: Product }>>;
   getLowStockAlerts(): Promise<Array<InventoryLevel & { product: Product }>>;
   updateInventoryLevel(data: InsertInventoryLevel): Promise<InventoryLevel>;
   bulkUpdateInventoryLevels(levels: InsertInventoryLevel[]): Promise<InventoryLevel[]>;
@@ -212,6 +213,35 @@ export class DatabaseStorage implements IStorage {
       .where(eq(inventoryLevels.warehouseId, warehouseId));
   }
 
+  async getWarehouseInventoryWithProducts(warehouseId: string): Promise<Array<InventoryLevel & { product: Product }>> {
+    const results = await db
+      .select({
+        id: inventoryLevels.id,
+        productId: inventoryLevels.productId,
+        warehouseId: inventoryLevels.warehouseId,
+        quantity: inventoryLevels.quantity,
+        row: inventoryLevels.row,
+        shelf: inventoryLevels.shelf,
+        updatedAt: inventoryLevels.updatedAt,
+        product: products,
+      })
+      .from(inventoryLevels)
+      .innerJoin(products, eq(inventoryLevels.productId, products.id))
+      .where(eq(inventoryLevels.warehouseId, warehouseId))
+      .orderBy(inventoryLevels.row, inventoryLevels.shelf, products.name);
+    
+    return results.map(row => ({
+      id: row.id,
+      productId: row.productId,
+      warehouseId: row.warehouseId,
+      quantity: row.quantity,
+      row: row.row,
+      shelf: row.shelf,
+      updatedAt: row.updatedAt,
+      product: row.product,
+    }));
+  }
+
   async getLowStockAlerts(): Promise<Array<InventoryLevel & { product: Product }>> {
     const results = await db
       .select({
@@ -219,6 +249,8 @@ export class DatabaseStorage implements IStorage {
         productId: inventoryLevels.productId,
         warehouseId: inventoryLevels.warehouseId,
         quantity: inventoryLevels.quantity,
+        row: inventoryLevels.row,
+        shelf: inventoryLevels.shelf,
         updatedAt: inventoryLevels.updatedAt,
         product: products,
       })
@@ -231,6 +263,8 @@ export class DatabaseStorage implements IStorage {
       productId: row.productId,
       warehouseId: row.warehouseId,
       quantity: row.quantity,
+      row: row.row,
+      shelf: row.shelf,
       updatedAt: row.updatedAt,
       product: row.product,
     }));
@@ -252,6 +286,8 @@ export class DatabaseStorage implements IStorage {
         .update(inventoryLevels)
         .set({
           quantity: data.quantity,
+          row: data.row,
+          shelf: data.shelf,
           updatedAt: new Date(),
         })
         .where(
