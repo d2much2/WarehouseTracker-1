@@ -10,6 +10,7 @@ import {
   LogOut,
   MessageSquare,
   Sparkles,
+  BookOpen,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -78,6 +79,11 @@ const bottomMenuItems = [
     title: "Reports",
     url: "/reports",
     icon: BarChart3,
+  },
+  {
+    title: "Documentation",
+    url: "/documentation",
+    icon: BookOpen,
   },
   {
     title: "Settings",
