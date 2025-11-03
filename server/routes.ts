@@ -80,15 +80,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = signupSchema.parse(req.body);
       
-      const existingUser = await storage.getUserByEmail(validatedData.email);
+      const existingUser = await storage.getUserByUsername(validatedData.username);
       if (existingUser) {
-        return res.status(400).json({ message: "Email already registered" });
+        return res.status(400).json({ message: "Username already registered" });
       }
 
       const passwordHash = await hashPassword(validatedData.password);
       
       const newUser = await storage.createUser({
-        email: validatedData.email,
+        username: validatedData.username,
         passwordHash,
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
