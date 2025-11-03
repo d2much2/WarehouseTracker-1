@@ -125,7 +125,17 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
   });
 
   const handleBarcodeScanned = (barcode: string) => {
-    const product = products?.find(
+    if (!products || products.length === 0) {
+      toast({
+        title: "Loading Products",
+        description: "Please wait for products to load before scanning",
+        variant: "destructive",
+      });
+      setShowScanner(false);
+      return;
+    }
+
+    const product = products.find(
       (p) => p.barcode === barcode
     );
     
@@ -179,11 +189,17 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              {showScanner && (
+              {showScanner && products && products.length > 0 && (
                 <BarcodeScanner
                   onScan={handleBarcodeScanned}
                   onClose={() => setShowScanner(false)}
                 />
+              )}
+              
+              {showScanner && (!products || products.length === 0) && (
+                <div className="border rounded-md p-4 text-center">
+                  <p className="text-sm text-muted-foreground">Loading products...</p>
+                </div>
               )}
               
               <FormField

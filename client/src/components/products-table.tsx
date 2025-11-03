@@ -92,7 +92,8 @@ export function ProductsTable({ products }: ProductsTableProps) {
     .filter((product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase())
+      product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     .sort((a, b) => {
       const aVal = a[sortField];

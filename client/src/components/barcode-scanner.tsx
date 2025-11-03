@@ -35,8 +35,12 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
           return;
         }
 
-        // Use the first camera (usually back camera on mobile)
-        const selectedDeviceId = videoInputDevices[0].deviceId;
+        // Prefer environment-facing (back) camera for better barcode scanning
+        const backCamera = videoInputDevices.find(device => 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('environment')
+        );
+        const selectedDeviceId = backCamera?.deviceId || videoInputDevices[0].deviceId;
 
         const controls = await codeReader.decodeFromVideoDevice(
           selectedDeviceId,
