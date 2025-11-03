@@ -27,19 +27,29 @@ import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Messaging from "@/pages/messaging";
 import AIAssistant from "@/pages/ai-assistant";
-import Landing from "@/pages/landing";
+import Login from "@/pages/login";
+import Signup from "@/pages/signup";
 import NotFound from "@/pages/not-found";
-import { Skeleton } from "@/components/ui/skeleton";
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const [location, setLocation] = useLocation();
 
   if (isLoading) {
     return <LoadingPage />;
   }
 
   if (!isAuthenticated) {
-    return <Landing />;
+    if (location !== "/login" && location !== "/signup") {
+      setLocation("/login");
+      return <LoadingPage />;
+    }
+    return <>{children}</>;
+  }
+
+  if (location === "/login" || location === "/signup") {
+    setLocation("/");
+    return <LoadingPage />;
   }
 
   return <>{children}</>;
@@ -127,7 +137,13 @@ export default function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <AuthGate>
-            <AuthenticatedRoutes />
+            <Switch>
+              <Route path="/login" component={Login} />
+              <Route path="/signup" component={Signup} />
+              <Route>
+                <AuthenticatedRoutes />
+              </Route>
+            </Switch>
           </AuthGate>
           <Toaster />
         </TooltipProvider>

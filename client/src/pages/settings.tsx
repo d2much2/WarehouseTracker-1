@@ -1,13 +1,34 @@
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { NetworkInfo } from "@/components/network-info";
-import { User, Settings as SettingsIcon } from "lucide-react";
+import { Settings as SettingsIcon, LogOut } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function Settings() {
   const { user, isLoading } = useAuth();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/auth/logout");
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      setLocation("/login");
+      toast({
+        title: "Logged Out",
+        description: "You have been logged out successfully",
+      });
+    },
+  });
 
   const getInitials = (firstName?: string | null, lastName?: string | null) => {
     if (!firstName && !lastName) return "U";
@@ -30,22 +51,32 @@ export default function Settings() {
               <CardTitle className="text-xl font-semibold">Profile Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={user?.profileImageUrl || ""} alt={user?.firstName || "User"} />
-                  <AvatarFallback>
-                    {getInitials(user?.firstName, user?.lastName)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="text-lg font-medium">
-                    {user?.firstName} {user?.lastName}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{user?.email}</p>
-                  <Badge variant="secondary" className="mt-1">
-                    {user?.role}
-                  </Badge>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarFallback>
+                      {getInitials(user?.firstName, user?.lastName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-lg font-medium">
+                      {user?.firstName} {user?.lastName}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{user?.email}</p>
+                    <Badge variant="secondary" className="mt-1">
+                      {user?.role}
+                    </Badge>
+                  </div>
                 </div>
+                <Button
+                  variant="destructive"
+                  onClick={() => logoutMutation.mutate()}
+                  disabled={logoutMutation.isPending}
+                  data-testid="button-logout"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {logoutMutation.isPending ? "Logging out..." : "Log Out"}
+                </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
