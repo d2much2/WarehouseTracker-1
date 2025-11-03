@@ -65,6 +65,7 @@ function AuthenticatedRoutesInner() {
             <div className="flex items-center gap-3">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <div className="flex items-center gap-2">
+                <span className="font-semibold text-lg hidden sm:inline">Pro Supply</span>
                 <img src={logoUrl} alt="Company Logo" className="h-8 w-auto" />
               </div>
             </div>
