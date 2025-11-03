@@ -64,6 +64,17 @@ function AuthenticatedRoutesInner() {
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <div className="flex items-center gap-3">
               <WebSocketStatus connectionStatus={connectionStatus} />
+              {!isMessagesPage && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsChatOpen(!isChatOpen)}
+                  data-testid="button-open-chat"
+                  title="Toggle messaging"
+                >
+                  <MessageSquare className="h-5 w-5" />
+                </Button>
+              )}
               <ThemeToggle />
             </div>
           </header>
@@ -83,25 +94,10 @@ function AuthenticatedRoutesInner() {
               <Route component={NotFound} />
             </Switch>
 
-            {!isMessagesPage && (
-              <>
-                {isChatOpen && (
-                  <div className="fixed bottom-6 right-6 w-[28rem] h-[36rem] shadow-2xl z-[100] rounded-lg overflow-hidden border">
-                    <MessagingPanel onClose={() => setIsChatOpen(false)} />
-                  </div>
-                )}
-
-                {!isChatOpen && (
-                  <Button
-                    className="fixed bottom-6 right-6 rounded-full h-16 w-16 shadow-2xl z-[100] hover:scale-110 transition-transform"
-                    size="icon"
-                    onClick={() => setIsChatOpen(true)}
-                    data-testid="button-open-chat"
-                  >
-                    <MessageSquare className="h-7 w-7" />
-                  </Button>
-                )}
-              </>
+            {!isMessagesPage && isChatOpen && (
+              <div className="fixed bottom-6 right-6 w-[28rem] h-[36rem] shadow-2xl z-[100] rounded-lg overflow-hidden border">
+                <MessagingPanel onClose={() => setIsChatOpen(false)} />
+              </div>
             )}
           </main>
         </div>
