@@ -124,7 +124,7 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
     },
   });
 
-  const handleBarcodeScanned = (barcode: string) => {
+  const handleBarcodeScanned = (code: string) => {
     if (!products || products.length === 0) {
       toast({
         title: "Loading Products",
@@ -136,7 +136,7 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
     }
 
     const product = products.find(
-      (p) => p.barcode === barcode
+      (p) => p.barcode === code || p.qrCode === code
     );
     
     if (product) {
@@ -149,7 +149,7 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
     } else {
       toast({
         title: "Product Not Found",
-        description: `No product found with barcode: ${barcode}`,
+        description: `No product found with code: ${code}`,
         variant: "destructive",
       });
       setShowScanner(false);

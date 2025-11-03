@@ -54,6 +54,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [productForBarcode, setProductForBarcode] = useState<Product | null>(null);
+  const [productForQRCode, setProductForQRCode] = useState<Product | null>(null);
 
   const deleteProduct = useMutation({
     mutationFn: async (productId: string) => {
@@ -95,7 +96,8 @@ export function ProductsTable({ products }: ProductsTableProps) {
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()))
+      (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (product.qrCode && product.qrCode.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     .sort((a, b) => {
       const aVal = a[sortField];
@@ -131,11 +133,11 @@ export function ProductsTable({ products }: ProductsTableProps) {
     setEditDialogOpen(true);
   };
 
-  const handleBarcodeScanned = (barcode: string) => {
-    const product = products.find((p) => p.barcode === barcode);
+  const handleBarcodeScanned = (code: string) => {
+    const product = products.find((p) => p.barcode === code || p.qrCode === code);
     
     if (product) {
-      setSearchTerm(barcode);
+      setSearchTerm(code);
       setShowScanner(false);
       toast({
         title: "Product Found",
@@ -144,7 +146,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
     } else {
       toast({
         title: "Product Not Found",
-        description: `No product found with barcode: ${barcode}`,
+        description: `No product found with code: ${code}`,
         variant: "destructive",
       });
       setShowScanner(false);
@@ -163,6 +165,18 @@ export function ProductsTable({ products }: ProductsTableProps) {
     setProductForBarcode(product);
   };
 
+  const handleGenerateQRCode = (product: Product) => {
+    if (!product.qrCode) {
+      toast({
+        title: "No QR Code",
+        description: "This product doesn't have a QR code assigned.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setProductForQRCode(product);
+  };
+
   return (
     <div className="space-y-4">
       {showScanner && (
@@ -176,7 +190,17 @@ export function ProductsTable({ products }: ProductsTableProps) {
         <BarcodeGenerator
           value={productForBarcode.barcode!}
           productName={productForBarcode.name}
+          type="barcode"
           onClose={() => setProductForBarcode(null)}
+        />
+      )}
+
+      {productForQRCode && (
+        <BarcodeGenerator
+          value={productForQRCode.qrCode!}
+          productName={productForQRCode.name}
+          type="qrcode"
+          onClose={() => setProductForQRCode(null)}
         />
       )}
 
@@ -254,6 +278,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
                 </TableHead>
                 <TableHead className="text-sm font-medium uppercase tracking-wide">Category</TableHead>
                 <TableHead className="text-sm font-medium uppercase tracking-wide">Barcode</TableHead>
+                <TableHead className="text-sm font-medium uppercase tracking-wide">QR Code</TableHead>
                 <TableHead className="text-sm font-medium uppercase tracking-wide">
                   <Button
                     variant="ghost"
@@ -275,6 +300,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell className="text-muted-foreground">{product.category}</TableCell>
                   <TableCell className="font-mono text-sm">{product.barcode || "-"}</TableCell>
+                  <TableCell className="font-mono text-sm">{product.qrCode || "-"}</TableCell>
                   <TableCell className="font-mono">{product.lowStockThreshold}</TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -291,6 +317,11 @@ export function ProductsTable({ products }: ProductsTableProps) {
                         {product.barcode && (
                           <DropdownMenuItem onClick={() => handleGenerateBarcode(product)} data-testid={`button-generate-barcode-${product.id}`}>
                             Generate Barcode
+                          </DropdownMenuItem>
+                        )}
+                        {product.qrCode && (
+                          <DropdownMenuItem onClick={() => handleGenerateQRCode(product)} data-testid={`button-generate-qrcode-${product.id}`}>
+                            Generate QR Code
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
