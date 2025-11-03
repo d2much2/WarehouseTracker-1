@@ -18,7 +18,7 @@ export default function Signup() {
   const form = useForm<SignupData>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
       firstName: "",
       lastName: "",
@@ -104,15 +104,15 @@ export default function Signup() {
               </div>
               <FormField
                 control={form.control}
-                name="email"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Username</FormLabel>
                     <FormControl>
                       <Input
-                        type="email"
-                        placeholder="john.doe@example.com"
-                        data-testid="input-email"
+                        type="text"
+                        placeholder="username"
+                        data-testid="input-username"
                         {...field}
                       />
                     </FormControl>
