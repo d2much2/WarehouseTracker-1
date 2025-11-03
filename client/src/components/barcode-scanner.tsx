@@ -15,12 +15,46 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const controlsRef = useRef<any>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const isCleaningUpRef = useRef(false);
   const { toast } = useToast();
+
+  const cleanupCamera = async () => {
+    if (isCleaningUpRef.current) return;
+    isCleaningUpRef.current = true;
+
+    if (controlsRef.current) {
+      try {
+        controlsRef.current.stop();
+      } catch (err) {
+        console.error("Error stopping controls:", err);
+      }
+      controlsRef.current = null;
+    }
+
+    if (streamRef.current) {
+      await Promise.all(
+        streamRef.current.getTracks().map(track => 
+          new Promise<void>(resolve => {
+            track.stop();
+            requestAnimationFrame(() => resolve());
+          })
+        )
+      );
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    isCleaningUpRef.current = false;
+  };
 
   useEffect(() => {
     const codeReader = new BrowserMultiFormatReader();
     codeReaderRef.current = codeReader;
-    let streamRef: MediaStream | null = null;
 
     const startScanning = async () => {
       try {
@@ -35,7 +69,6 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
           return;
         }
 
-        // Prefer environment-facing (back) camera for better barcode scanning
         const backCamera = videoInputDevices.find(device => 
           device.label.toLowerCase().includes('back') || 
           device.label.toLowerCase().includes('environment')
@@ -45,22 +78,29 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
         const controls = await codeReader.decodeFromVideoDevice(
           selectedDeviceId,
           videoRef.current!,
-          (result, error) => {
+          async (result, error) => {
             if (result) {
               const barcodeValue = result.getText();
               toast({
-                title: "Barcode Scanned",
+                title: "Code Scanned",
                 description: `Found: ${barcodeValue}`,
               });
-              onScan(barcodeValue);
-              controls?.stop();
-              stopScanning();
+              
+              await cleanupCamera();
+              
+              requestAnimationFrame(() => {
+                onScan(barcodeValue);
+                setIsScanning(false);
+                onClose();
+              });
             }
           }
         );
 
+        controlsRef.current = controls;
+
         if (videoRef.current && videoRef.current.srcObject) {
-          streamRef = videoRef.current.srcObject as MediaStream;
+          streamRef.current = videoRef.current.srcObject as MediaStream;
         }
       } catch (err) {
         console.error("Camera error:", err);
@@ -69,26 +109,10 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
       }
     };
 
-    const stopScanning = () => {
-      if (streamRef) {
-        streamRef.getTracks().forEach(track => track.stop());
-      }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-      setIsScanning(false);
-      onClose();
-    };
-
     startScanning();
 
     return () => {
-      if (streamRef) {
-        streamRef.getTracks().forEach(track => track.stop());
-      }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
+      cleanupCamera();
     };
   }, [onScan, onClose, toast]);
 
@@ -103,7 +127,13 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={onClose}
+            onClick={async () => {
+              await cleanupCamera();
+              requestAnimationFrame(() => {
+                setIsScanning(false);
+                onClose();
+              });
+            }}
             data-testid="button-close-scanner"
           >
             <X className="h-4 w-4" />
