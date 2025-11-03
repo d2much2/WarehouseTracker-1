@@ -57,7 +57,7 @@ export default function Documentation() {
                 <li>SKU, barcode, and QR code support</li>
                 <li>Category and supplier organization</li>
                 <li>Advanced search and filtering</li>
-                <li>Bulk CSV import/export</li>
+                <li>CSV import/export for products</li>
                 <li>Low stock threshold configuration</li>
               </ul>
             </CardContent>
@@ -77,7 +77,6 @@ export default function Documentation() {
                 <li>Track capacity and status (active/maintenance/inactive)</li>
                 <li>Location and address information</li>
                 <li>Row and shelf organization</li>
-                <li>CSV import/export capabilities</li>
                 <li>Real-time inventory tracking per location</li>
               </ul>
             </CardContent>
@@ -98,7 +97,6 @@ export default function Documentation() {
                 <li>Email and phone tracking</li>
                 <li>Physical address storage</li>
                 <li>Link suppliers to products</li>
-                <li>CSV import/export support</li>
               </ul>
             </CardContent>
           </Card>
@@ -137,7 +135,6 @@ export default function Documentation() {
                 <li>Low stock alerts and notifications</li>
                 <li>Customizable threshold per product</li>
                 <li>Row and shelf location tracking</li>
-                <li>CSV import/export of inventory data</li>
                 <li>Real-time updates via WebSocket</li>
               </ul>
             </CardContent>
@@ -189,7 +186,6 @@ export default function Documentation() {
                 <li>Direct messaging between users</li>
                 <li>Real-time message delivery via WebSocket</li>
                 <li>Message history and conversation threads</li>
-                <li>User presence indicators</li>
               </ul>
             </CardContent>
           </Card>
@@ -227,7 +223,6 @@ export default function Documentation() {
                 <li>Search products by voice</li>
                 <li>AI assistant voice queries</li>
                 <li>Browser-based speech recognition</li>
-                <li>Multi-language support</li>
               </ul>
             </CardContent>
           </Card>
@@ -281,9 +276,7 @@ export default function Documentation() {
             <CardContent className="space-y-2">
               <ul className="list-disc list-inside space-y-1 text-sm">
                 <li>Import products from CSV files</li>
-                <li>Import warehouses and suppliers</li>
-                <li>Import inventory levels in bulk</li>
-                <li>Export all data to CSV format</li>
+                <li>Export products to CSV format</li>
                 <li>Template downloads for easy formatting</li>
               </ul>
             </CardContent>
