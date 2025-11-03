@@ -506,6 +506,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/network-info", isAuthenticated, async (req, res) => {
+    try {
+      const os = await import('os');
+      const interfaces = os.networkInterfaces();
+      const addresses: Array<{
+        name: string;
+        address: string;
+        family: string;
+        internal: boolean;
+      }> = [];
+      
+      for (const [name, nets] of Object.entries(interfaces)) {
+        if (nets) {
+          for (const net of nets) {
+            if (!net.internal && net.family === 'IPv4') {
+              addresses.push({
+                name,
+                address: net.address,
+                family: net.family,
+                internal: net.internal,
+              });
+            }
+          }
+        }
+      }
+      
+      const protocol = req.protocol || 'http';
+      const host = req.get('host') || 'localhost:5000';
+      const port = parseInt(process.env.PORT || '5000', 10);
+      
+      const httpUrl = `${protocol}://${host}`;
+      const wsProtocol = protocol === 'https' ? 'wss' : 'ws';
+      const webSocketUrl = `${wsProtocol}://${host}/ws`;
+      
+      res.json({
+        addresses,
+        port,
+        hostname: os.hostname(),
+        httpUrl,
+        webSocketUrl,
+      });
+    } catch (error) {
+      console.error("Error fetching network info:", error);
+      res.status(500).json({ message: "Failed to fetch network info" });
+    }
+  });
+
   app.post("/api/messages", isAuthenticated, async (req: any, res) => {
     try {
       const data = insertMessageSchema.parse({
