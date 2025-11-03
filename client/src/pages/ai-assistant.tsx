@@ -49,12 +49,22 @@ export default function AIAssistant() {
         },
       ]);
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error?.message || "Failed to get response from AI assistant";
       toast({
         title: "Error",
-        description: "Failed to get response from AI assistant",
+        description: errorMessage,
         variant: "destructive",
       });
+      
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: 'I apologize, but I encountered an error. Please try again.',
+          timestamp: new Date(),
+        },
+      ]);
     },
   });
 

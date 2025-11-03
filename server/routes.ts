@@ -844,20 +844,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const aiChatSchema = z.object({
+    message: z.string().min(1, "Message cannot be empty"),
+    conversationHistory: z.array(
+      z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string(),
+      })
+    ).optional().default([]),
+  });
+
   app.post("/api/ai/chat", isAuthenticated, async (req, res) => {
     try {
-      const { message, conversationHistory = [] } = req.body;
+      const validation = aiChatSchema.safeParse(req.body);
       
-      if (!message || typeof message !== 'string') {
-        return res.status(400).json({ message: "Message is required" });
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Invalid request data",
+          errors: validation.error.errors,
+        });
       }
+      
+      const { message, conversationHistory } = validation.data;
       
       const response = await chatWithAssistant(message, conversationHistory);
       
       res.json({ response });
     } catch (error) {
       console.error("Error in AI chat:", error);
-      res.status(500).json({ message: "Failed to get AI response" });
+      
+      if (error instanceof Error) {
+        if (error.message.includes('not configured')) {
+          return res.status(503).json({ 
+            message: "AI assistant is not available. Please contact your administrator.",
+          });
+        }
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to get AI response. Please try again.",
+      });
     }
   });
 
