@@ -9,10 +9,11 @@ import { useToast } from "@/hooks/use-toast";
 interface BarcodeGeneratorProps {
   value: string;
   productName: string;
+  type?: 'barcode' | 'qrcode';
   onClose?: () => void;
 }
 
-export function BarcodeGenerator({ value, productName, onClose }: BarcodeGeneratorProps) {
+export function BarcodeGenerator({ value, productName, type = 'barcode', onClose }: BarcodeGeneratorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -22,19 +23,28 @@ export function BarcodeGenerator({ value, productName, onClose }: BarcodeGenerat
 
     try {
       setError(null);
-      bwipjs.toCanvas(canvasRef.current, {
-        bcid: 'code128',
-        text: value,
-        scale: 3,
-        height: 10,
-        includetext: true,
-        textxalign: 'center',
-      });
+      if (type === 'qrcode') {
+        bwipjs.toCanvas(canvasRef.current, {
+          bcid: 'qrcode',
+          text: value,
+          scale: 3,
+          includetext: false,
+        });
+      } else {
+        bwipjs.toCanvas(canvasRef.current, {
+          bcid: 'code128',
+          text: value,
+          scale: 3,
+          height: 10,
+          includetext: true,
+          textxalign: 'center',
+        });
+      }
     } catch (err) {
-      console.error("Barcode generation error:", err);
-      setError("Failed to generate barcode. Please check the barcode value.");
+      console.error("Code generation error:", err);
+      setError(`Failed to generate ${type === 'qrcode' ? 'QR code' : 'barcode'}. Please check the value.`);
     }
-  }, [value]);
+  }, [value, type]);
 
   const handleDownload = () => {
     if (!canvasRef.current) return;
@@ -43,20 +53,21 @@ export function BarcodeGenerator({ value, productName, onClose }: BarcodeGenerat
       const canvas = canvasRef.current;
       const url = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      const filename = `${productName.replace(/[^a-z0-9]/gi, '_')}_${value}.png`;
+      const prefix = type === 'qrcode' ? 'QR' : 'Barcode';
+      const filename = `${prefix}_${productName.replace(/[^a-z0-9]/gi, '_')}_${value}.png`;
       link.download = filename;
       link.href = url;
       link.click();
 
       toast({
-        title: "Barcode Downloaded",
+        title: `${type === 'qrcode' ? 'QR Code' : 'Barcode'} Downloaded`,
         description: `Saved as ${filename}`,
       });
     } catch (err) {
       console.error("Download error:", err);
       toast({
         title: "Download Failed",
-        description: "Could not download the barcode image",
+        description: `Could not download the ${type === 'qrcode' ? 'QR code' : 'barcode'} image`,
         variant: "destructive",
       });
     }
@@ -66,7 +77,7 @@ export function BarcodeGenerator({ value, productName, onClose }: BarcodeGenerat
     <Card className="p-4">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Barcode for {productName}</h3>
+          <h3 className="font-semibold">{type === 'qrcode' ? 'QR Code' : 'Barcode'} for {productName}</h3>
           {onClose && (
             <Button
               variant="ghost"

@@ -98,7 +98,7 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Scan className="h-5 w-5" />
-            <h3 className="font-semibold">Scan Barcode</h3>
+            <h3 className="font-semibold">Scan Barcode or QR Code</h3>
           </div>
           <Button
             variant="ghost"
@@ -131,7 +131,7 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
         )}
 
         <p className="text-sm text-muted-foreground text-center">
-          Position the barcode within the frame to scan
+          Position the barcode or QR code within the frame to scan
         </p>
       </div>
     </Card>
