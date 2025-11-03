@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -35,20 +35,25 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const [location, setLocation] = useLocation();
 
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated && location !== "/login" && location !== "/signup") {
+        setLocation("/login");
+      } else if (isAuthenticated && (location === "/login" || location === "/signup")) {
+        setLocation("/");
+      }
+    }
+  }, [isAuthenticated, isLoading, location, setLocation]);
+
   if (isLoading) {
     return <LoadingPage />;
   }
 
-  if (!isAuthenticated) {
-    if (location !== "/login" && location !== "/signup") {
-      setLocation("/login");
-      return <LoadingPage />;
-    }
-    return <>{children}</>;
+  if (!isAuthenticated && location !== "/login" && location !== "/signup") {
+    return <LoadingPage />;
   }
 
-  if (location === "/login" || location === "/signup") {
-    setLocation("/");
+  if (isAuthenticated && (location === "/login" || location === "/signup")) {
     return <LoadingPage />;
   }
 
