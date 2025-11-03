@@ -19,6 +19,7 @@ import { CsvExportButton } from "@/components/csv-export-button";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import type { Warehouse, InventoryLevel, Product } from "@shared/schema";
+import { VoiceInputButton } from "@/components/voice-input-button";
 
 type InventoryWithProduct = InventoryLevel & { product: Product };
 
@@ -159,13 +160,16 @@ export default function WarehouseDetail() {
             <div className="flex items-center gap-2">
               <div className="relative w-72">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search products, SKU, row, shelf..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search-inventory"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Search products, SKU, row, shelf..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 flex-1"
+                    data-testid="input-search-inventory"
+                  />
+                  <VoiceInputButton onTranscript={(text) => setSearchQuery(prev => prev + (prev ? ' ' : '') + text)} />
+                </div>
               </div>
               <CsvExportButton 
                 endpoint="/api/csv/download/inventory"

@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product, Warehouse } from "@shared/schema";
+import { VoiceInputButton } from "@/components/voice-input-button";
 
 interface StockMovementDialogProps {
   trigger: React.ReactNode;
@@ -258,12 +259,15 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
                     <FormItem>
                       <FormLabel>Row (Optional)</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="e.g., A1"
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-row"
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="e.g., A1"
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-row"
+                          />
+                          <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -277,12 +281,15 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
                     <FormItem>
                       <FormLabel>Shelf (Optional)</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="e.g., S3"
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-shelf"
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="e.g., S3"
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-shelf"
+                          />
+                          <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
