@@ -162,6 +162,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
       });
       return;
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setProductForBarcode(product);
   };
 
@@ -174,6 +175,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
       });
       return;
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setProductForQRCode(product);
   };
 
