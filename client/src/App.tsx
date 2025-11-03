@@ -15,7 +15,7 @@ import { MessagingPanel } from "@/components/messaging-panel";
 import { LoadingPage } from "@/components/loading-page";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
-import logoUrl from "@assets/proicon/prosupply.png";
+import logoUrl from "@assets/proicon2/Lowes_Companies_Logo.svg.png";
 import Dashboard from "@/pages/dashboard";
 import Products from "@/pages/products";
 import Warehouses from "@/pages/warehouses";
@@ -65,8 +65,7 @@ function AuthenticatedRoutesInner() {
             <div className="flex items-center gap-3">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <div className="flex items-center gap-2">
-                <img src={logoUrl} alt="ProSupply Logo" className="h-8 w-auto" />
-                <span className="font-semibold text-lg hidden sm:inline">ProSupply</span>
+                <img src={logoUrl} alt="Company Logo" className="h-8 w-auto" />
               </div>
             </div>
             <div className="flex items-center gap-3">
