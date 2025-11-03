@@ -151,6 +151,12 @@ export default function Suppliers() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 flex-1"
               data-testid="input-search-suppliers"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  setSearchTerm('');
+                }
+              }}
             />
             <VoiceInputButton onTranscript={(text) => setSearchTerm(prev => prev + (prev ? ' ' : '') + text)} />
           </div>

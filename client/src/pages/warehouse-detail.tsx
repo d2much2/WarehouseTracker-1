@@ -167,6 +167,12 @@ export default function WarehouseDetail() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 flex-1"
                     data-testid="input-search-inventory"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        setSearchQuery('');
+                      }
+                    }}
                   />
                   <VoiceInputButton onTranscript={(text) => setSearchQuery(prev => prev + (prev ? ' ' : '') + text)} />
                 </div>

@@ -153,7 +153,17 @@ export function AddSupplierDialog({ trigger, supplier, onSuccess }: AddSupplierD
                   <FormLabel>Supplier Name*</FormLabel>
                   <FormControl>
                     <div className="flex gap-2">
-                      <Input {...field} placeholder="ABC Supplies Co." data-testid="input-supplier-name" />
+                      <Input 
+                        {...field} 
+                        placeholder="ABC Supplies Co." 
+                        data-testid="input-supplier-name"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            field.onChange('');
+                          }
+                        }}
+                      />
                       <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                     </div>
                   </FormControl>
@@ -170,7 +180,18 @@ export function AddSupplierDialog({ trigger, supplier, onSuccess }: AddSupplierD
                   <FormLabel>Contact Person</FormLabel>
                   <FormControl>
                     <div className="flex gap-2">
-                      <Input {...field} value={field.value || ""} placeholder="John Doe" data-testid="input-supplier-contact" />
+                      <Input 
+                        {...field} 
+                        value={field.value || ""} 
+                        placeholder="John Doe" 
+                        data-testid="input-supplier-contact"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            field.onChange('');
+                          }
+                        }}
+                      />
                       <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                     </div>
                   </FormControl>
@@ -188,7 +209,19 @@ export function AddSupplierDialog({ trigger, supplier, onSuccess }: AddSupplierD
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <div className="flex gap-2">
-                        <Input {...field} value={field.value || ""} type="email" placeholder="contact@supplier.com" data-testid="input-supplier-email" />
+                        <Input 
+                          {...field} 
+                          value={field.value || ""} 
+                          type="email" 
+                          placeholder="contact@supplier.com" 
+                          data-testid="input-supplier-email"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              field.onChange('');
+                            }
+                          }}
+                        />
                         <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                       </div>
                     </FormControl>
@@ -204,7 +237,18 @@ export function AddSupplierDialog({ trigger, supplier, onSuccess }: AddSupplierD
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
                       <div className="flex gap-2">
-                        <Input {...field} value={field.value || ""} placeholder="+1 234 567 8900" data-testid="input-supplier-phone" />
+                        <Input 
+                          {...field} 
+                          value={field.value || ""} 
+                          placeholder="+1 234 567 8900" 
+                          data-testid="input-supplier-phone"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              field.onChange('');
+                            }
+                          }}
+                        />
                         <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                       </div>
                     </FormControl>

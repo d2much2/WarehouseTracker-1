@@ -265,6 +265,12 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
                             {...field}
                             value={field.value || ""}
                             data-testid="input-row"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                field.onChange('');
+                              }
+                            }}
                           />
                           <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                         </div>
@@ -287,6 +293,12 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
                             {...field}
                             value={field.value || ""}
                             data-testid="input-shelf"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                field.onChange('');
+                              }
+                            }}
                           />
                           <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                         </div>

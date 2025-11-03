@@ -162,7 +162,17 @@ export function AddWarehouseDialog({ trigger, warehouse, onSuccess }: AddWarehou
                   <FormLabel>Warehouse Name*</FormLabel>
                   <FormControl>
                     <div className="flex gap-2">
-                      <Input {...field} placeholder="Main Warehouse" data-testid="input-warehouse-name" />
+                      <Input 
+                        {...field} 
+                        placeholder="Main Warehouse" 
+                        data-testid="input-warehouse-name"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            field.onChange('');
+                          }
+                        }}
+                      />
                       <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                     </div>
                   </FormControl>
@@ -179,7 +189,17 @@ export function AddWarehouseDialog({ trigger, warehouse, onSuccess }: AddWarehou
                   <FormLabel>Location*</FormLabel>
                   <FormControl>
                     <div className="flex gap-2">
-                      <Input {...field} placeholder="New York, NY" data-testid="input-warehouse-location" />
+                      <Input 
+                        {...field} 
+                        placeholder="New York, NY" 
+                        data-testid="input-warehouse-location"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            field.onChange('');
+                          }
+                        }}
+                      />
                       <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                     </div>
                   </FormControl>

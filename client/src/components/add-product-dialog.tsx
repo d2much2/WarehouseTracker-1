@@ -207,7 +207,17 @@ export function AddProductDialog({ trigger, product, onSuccess, open: externalOp
                     <FormLabel>SKU*</FormLabel>
                     <FormControl>
                       <div className="flex gap-2">
-                        <Input {...field} placeholder="PROD-001" data-testid="input-product-sku" />
+                        <Input 
+                          {...field} 
+                          placeholder="PROD-001" 
+                          data-testid="input-product-sku"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              field.onChange('');
+                            }
+                          }}
+                        />
                         <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                       </div>
                     </FormControl>
@@ -223,7 +233,18 @@ export function AddProductDialog({ trigger, product, onSuccess, open: externalOp
                     <FormLabel>Barcode</FormLabel>
                     <FormControl>
                       <div className="flex gap-2">
-                        <Input {...field} value={field.value || ""} placeholder="123456789" data-testid="input-product-barcode" />
+                        <Input 
+                          {...field} 
+                          value={field.value || ""} 
+                          placeholder="123456789" 
+                          data-testid="input-product-barcode"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              field.onChange('');
+                            }
+                          }}
+                        />
                         <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                       </div>
                     </FormControl>
@@ -241,7 +262,17 @@ export function AddProductDialog({ trigger, product, onSuccess, open: externalOp
                   <FormLabel>Product Name*</FormLabel>
                   <FormControl>
                     <div className="flex gap-2">
-                      <Input {...field} placeholder="Enter product name" data-testid="input-product-name" />
+                      <Input 
+                        {...field} 
+                        placeholder="Enter product name" 
+                        data-testid="input-product-name"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            field.onChange('');
+                          }
+                        }}
+                      />
                       <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                     </div>
                   </FormControl>
@@ -279,7 +310,17 @@ export function AddProductDialog({ trigger, product, onSuccess, open: externalOp
                     <FormLabel>Category*</FormLabel>
                     <FormControl>
                       <div className="flex gap-2">
-                        <Input {...field} placeholder="Electronics, Furniture, etc." data-testid="input-product-category" />
+                        <Input 
+                          {...field} 
+                          placeholder="Electronics, Furniture, etc." 
+                          data-testid="input-product-category"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              field.onChange('');
+                            }
+                          }}
+                        />
                         <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
                       </div>
                     </FormControl>
