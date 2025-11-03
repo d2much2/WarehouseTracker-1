@@ -35,12 +35,12 @@ export default function AIAssistant() {
         content: m.content,
       }));
       
-      const result = await apiRequest("POST", "/api/ai/chat", {
+      const response = await apiRequest("POST", "/api/ai/chat", {
         message: userMessage,
         conversationHistory,
       });
       
-      return result as unknown as { response: string };
+      return await response.json();
     },
     onSuccess: (data: { response: string }) => {
       setMessages(prev => [

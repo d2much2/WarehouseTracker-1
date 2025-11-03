@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { VoiceInputButton } from "@/components/voice-input-button";
 import { forwardRef } from "react";
+import { cn } from "@/lib/utils";
 
 export interface InputWithVoiceProps extends React.ComponentPropsWithoutRef<typeof Input> {
   onVoiceTranscript?: (text: string) => void;
@@ -8,14 +9,14 @@ export interface InputWithVoiceProps extends React.ComponentPropsWithoutRef<type
 }
 
 export const InputWithVoice = forwardRef<HTMLInputElement, InputWithVoiceProps>(
-  ({ onVoiceTranscript, showVoiceButton = true, ...props }, ref) => {
+  ({ onVoiceTranscript, showVoiceButton = true, className, ...props }, ref) => {
     if (!showVoiceButton) {
-      return <Input ref={ref} {...props} />;
+      return <Input ref={ref} className={className} {...props} />;
     }
 
     return (
       <div className="flex gap-2 flex-1">
-        <Input ref={ref} {...props} className="flex-1" />
+        <Input ref={ref} {...props} className={cn("flex-1", className)} />
         {onVoiceTranscript && (
           <VoiceInputButton onTranscript={onVoiceTranscript} />
         )}
