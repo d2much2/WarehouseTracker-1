@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { networkInterfaces } from "os";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, hashPassword } from "./auth";
+import passport from "passport";
 import {
   insertProductSchema,
   insertWarehouseSchema,
@@ -11,6 +12,8 @@ import {
   insertStockMovementSchema,
   insertInventoryLevelSchema,
   insertMessageSchema,
+  signupSchema,
+  loginSchema,
 } from "@shared/schema";
 import { z } from "zod";
 import Papa from "papaparse";
@@ -73,11 +76,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   await setupAuth(app);
 
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const validatedData = signupSchema.parse(req.body);
+      
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      const passwordHash = await hashPassword(validatedData.password);
+      
+      const newUser = await storage.createUser({
+        email: validatedData.email,
+        passwordHash,
+        firstName: validatedData.firstName,
+        lastName: validatedData.lastName,
+        role: "staff",
+      });
+
+      req.login(newUser, (err) => {
+        if (err) {
+          console.error("Login error after signup:", err);
+          return res.status(500).json({ message: "Failed to log in after signup" });
+        }
+        const { passwordHash: _, ...userWithoutPassword } = newUser;
+        res.json(userWithoutPassword);
+      });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(400).json({ message: "Invalid signup data" });
+    }
+  });
+
+  app.post("/api/auth/login", (req, res, next) => {
+    try {
+      loginSchema.parse(req.body);
+      passport.authenticate("local", (err: any, user: any, info: any) => {
+        if (err) {
+          return next(err);
+        }
+        if (!user) {
+          return res.status(401).json({ message: info?.message || "Invalid credentials" });
+        }
+        req.login(user, (loginErr) => {
+          if (loginErr) {
+            return next(loginErr);
+          }
+          const { passwordHash: _, ...userWithoutPassword } = user;
+          return res.json(userWithoutPassword);
+        });
+      })(req, res, next);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid login data" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.logout(() => {
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
   app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      const { passwordHash: _, ...userWithoutPassword } = req.user;
+      res.json(userWithoutPassword);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
