@@ -37,6 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Supplier } from "@shared/schema";
+import { VoiceInputButton } from "@/components/voice-input-button";
 
 export default function Suppliers() {
   const { toast } = useToast();
@@ -143,13 +144,16 @@ export default function Suppliers() {
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search suppliers..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-            data-testid="input-search-suppliers"
-          />
+          <div className="flex gap-2">
+            <Input
+              placeholder="Search suppliers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 flex-1"
+              data-testid="input-search-suppliers"
+            />
+            <VoiceInputButton onTranscript={(text) => setSearchTerm(prev => prev + (prev ? ' ' : '') + text)} />
+          </div>
         </div>
       </div>
 

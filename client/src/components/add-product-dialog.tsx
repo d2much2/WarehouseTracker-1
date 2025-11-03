@@ -35,6 +35,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertProductSchema, type Product, type Supplier } from "@shared/schema";
 import { z } from "zod";
+import { VoiceInputButton } from "@/components/voice-input-button";
 
 const formSchema = insertProductSchema.extend({
   lowStockThreshold: z.coerce.number().min(0, "Must be at least 0"),
@@ -205,7 +206,10 @@ export function AddProductDialog({ trigger, product, onSuccess, open: externalOp
                   <FormItem>
                     <FormLabel>SKU*</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="PROD-001" data-testid="input-product-sku" />
+                      <div className="flex gap-2">
+                        <Input {...field} placeholder="PROD-001" data-testid="input-product-sku" />
+                        <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -218,7 +222,10 @@ export function AddProductDialog({ trigger, product, onSuccess, open: externalOp
                   <FormItem>
                     <FormLabel>Barcode</FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value || ""} placeholder="123456789" data-testid="input-product-barcode" />
+                      <div className="flex gap-2">
+                        <Input {...field} value={field.value || ""} placeholder="123456789" data-testid="input-product-barcode" />
+                        <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -233,7 +240,10 @@ export function AddProductDialog({ trigger, product, onSuccess, open: externalOp
                 <FormItem>
                   <FormLabel>Product Name*</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter product name" data-testid="input-product-name" />
+                    <div className="flex gap-2">
+                      <Input {...field} placeholder="Enter product name" data-testid="input-product-name" />
+                      <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -268,7 +278,10 @@ export function AddProductDialog({ trigger, product, onSuccess, open: externalOp
                   <FormItem>
                     <FormLabel>Category*</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Electronics, Furniture, etc." data-testid="input-product-category" />
+                      <div className="flex gap-2">
+                        <Input {...field} placeholder="Electronics, Furniture, etc." data-testid="input-product-category" />
+                        <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

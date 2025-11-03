@@ -33,6 +33,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertWarehouseSchema, type Warehouse } from "@shared/schema";
 import { z } from "zod";
+import { VoiceInputButton } from "@/components/voice-input-button";
 
 const formSchema = insertWarehouseSchema.extend({
   capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
@@ -160,7 +161,10 @@ export function AddWarehouseDialog({ trigger, warehouse, onSuccess }: AddWarehou
                 <FormItem>
                   <FormLabel>Warehouse Name*</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Main Warehouse" data-testid="input-warehouse-name" />
+                    <div className="flex gap-2">
+                      <Input {...field} placeholder="Main Warehouse" data-testid="input-warehouse-name" />
+                      <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -174,7 +178,10 @@ export function AddWarehouseDialog({ trigger, warehouse, onSuccess }: AddWarehou
                 <FormItem>
                   <FormLabel>Location*</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="New York, NY" data-testid="input-warehouse-location" />
+                    <div className="flex gap-2">
+                      <Input {...field} placeholder="New York, NY" data-testid="input-warehouse-location" />
+                      <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

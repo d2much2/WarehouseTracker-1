@@ -27,6 +27,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertSupplierSchema, type Supplier } from "@shared/schema";
 import { z } from "zod";
+import { VoiceInputButton } from "@/components/voice-input-button";
 
 const formSchema = insertSupplierSchema;
 
@@ -151,7 +152,10 @@ export function AddSupplierDialog({ trigger, supplier, onSuccess }: AddSupplierD
                 <FormItem>
                   <FormLabel>Supplier Name*</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="ABC Supplies Co." data-testid="input-supplier-name" />
+                    <div className="flex gap-2">
+                      <Input {...field} placeholder="ABC Supplies Co." data-testid="input-supplier-name" />
+                      <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -165,7 +169,10 @@ export function AddSupplierDialog({ trigger, supplier, onSuccess }: AddSupplierD
                 <FormItem>
                   <FormLabel>Contact Person</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value || ""} placeholder="John Doe" data-testid="input-supplier-contact" />
+                    <div className="flex gap-2">
+                      <Input {...field} value={field.value || ""} placeholder="John Doe" data-testid="input-supplier-contact" />
+                      <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -180,7 +187,10 @@ export function AddSupplierDialog({ trigger, supplier, onSuccess }: AddSupplierD
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value || ""} type="email" placeholder="contact@supplier.com" data-testid="input-supplier-email" />
+                      <div className="flex gap-2">
+                        <Input {...field} value={field.value || ""} type="email" placeholder="contact@supplier.com" data-testid="input-supplier-email" />
+                        <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -193,7 +203,10 @@ export function AddSupplierDialog({ trigger, supplier, onSuccess }: AddSupplierD
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value || ""} placeholder="+1 234 567 8900" data-testid="input-supplier-phone" />
+                      <div className="flex gap-2">
+                        <Input {...field} value={field.value || ""} placeholder="+1 234 567 8900" data-testid="input-supplier-phone" />
+                        <VoiceInputButton onTranscript={(text) => field.onChange(field.value + (field.value ? ' ' : '') + text)} />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
