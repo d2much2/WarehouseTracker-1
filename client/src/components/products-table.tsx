@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, MoreHorizontal, Plus } from "lucide-react";
+import { Search, ArrowUpDown, MoreHorizontal, Plus, Scan } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +36,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product } from "@shared/schema";
 import { VoiceInputButton } from "./voice-input-button";
+import { BarcodeScanner } from "./barcode-scanner";
 
 interface ProductsTableProps {
   products: Product[];
@@ -50,6 +51,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   const deleteProduct = useMutation({
     mutationFn: async (productId: string) => {
@@ -126,8 +128,35 @@ export function ProductsTable({ products }: ProductsTableProps) {
     setEditDialogOpen(true);
   };
 
+  const handleBarcodeScanned = (barcode: string) => {
+    const product = products.find((p) => p.barcode === barcode);
+    
+    if (product) {
+      setSearchTerm(barcode);
+      setShowScanner(false);
+      toast({
+        title: "Product Found",
+        description: `${product.name} (${product.sku})`,
+      });
+    } else {
+      toast({
+        title: "Product Not Found",
+        description: `No product found with barcode: ${barcode}`,
+        variant: "destructive",
+      });
+      setShowScanner(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {showScanner && (
+        <BarcodeScanner
+          onScan={handleBarcodeScanned}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
       <div className="flex flex-wrap items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -146,6 +175,15 @@ export function ProductsTable({ products }: ProductsTableProps) {
               }}
             />
             <VoiceInputButton onTranscript={(text) => setSearchTerm(text)} />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowScanner(!showScanner)}
+              data-testid="button-scan-product"
+              title="Scan barcode"
+            >
+              <Scan className="h-4 w-4" />
+            </Button>
           </div>
         </div>
         <AddProductDialog
