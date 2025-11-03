@@ -10,6 +10,7 @@ import { Send, MessageSquare, X, Users } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { VoiceInputButton } from "@/components/voice-input-button";
 
 interface User {
   id: string;
@@ -231,14 +232,19 @@ export function MessagingPanel({ onClose }: MessagingPanelProps) {
           </ScrollArea>
           <div className="border-t p-4">
             <form onSubmit={handleSendMessage} className="flex gap-2">
-              <Input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={selectedUserId ? "Send a direct message..." : "Send a team message..."}
-                disabled={sendMessageMutation.isPending}
-                className="flex-1"
-                data-testid="input-message"
-              />
+              <div className="flex-1 flex gap-2">
+                <Input
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={selectedUserId ? "Send a direct message..." : "Send a team message..."}
+                  disabled={sendMessageMutation.isPending}
+                  className="flex-1"
+                  data-testid="input-message"
+                />
+                <VoiceInputButton
+                  onTranscript={(text) => setMessage(prev => prev + (prev ? ' ' : '') + text)}
+                />
+              </div>
               <Button
                 type="submit"
                 disabled={!message.trim() || sendMessageMutation.isPending}

@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Bot, User, Sparkles } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { VoiceInputButton } from "@/components/voice-input-button";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -27,17 +28,19 @@ export default function AIAssistant() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const chatMutation = useMutation({
+  const chatMutation = useMutation<{ response: string }, Error, string>({
     mutationFn: async (userMessage: string) => {
       const conversationHistory = messages.map(m => ({
         role: m.role,
         content: m.content,
       }));
       
-      return await apiRequest("POST", "/api/ai/chat", {
+      const result = await apiRequest("POST", "/api/ai/chat", {
         message: userMessage,
         conversationHistory,
       });
+      
+      return result as unknown as { response: string };
     },
     onSuccess: (data: { response: string }) => {
       setMessages(prev => [
@@ -163,14 +166,19 @@ export default function AIAssistant() {
           </ScrollArea>
           <div className="border-t p-4">
             <form onSubmit={handleSend} className="flex gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about inventory, stock levels, warehouses..."
-                disabled={chatMutation.isPending}
-                className="flex-1"
-                data-testid="input-ai-message"
-              />
+              <div className="flex-1 flex gap-2">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask about inventory, stock levels, warehouses..."
+                  disabled={chatMutation.isPending}
+                  className="flex-1"
+                  data-testid="input-ai-message"
+                />
+                <VoiceInputButton
+                  onTranscript={(text) => setInput(prev => prev + (prev ? ' ' : '') + text)}
+                />
+              </div>
               <Button
                 type="submit"
                 disabled={!input.trim() || chatMutation.isPending}
