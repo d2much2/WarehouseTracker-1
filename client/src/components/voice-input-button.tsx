@@ -20,12 +20,6 @@ export function VoiceInputButton({ onTranscript, className }: VoiceInputButtonPr
     isMicrophoneAvailable,
   } = useSpeechRecognition();
 
-  useEffect(() => {
-    if (transcript) {
-      onTranscript(transcript);
-    }
-  }, [transcript, onTranscript]);
-
   const toggleListening = () => {
     if (!browserSupportsSpeechRecognition) {
       toast({
@@ -48,6 +42,11 @@ export function VoiceInputButton({ onTranscript, className }: VoiceInputButtonPr
     if (isListening) {
       SpeechRecognition.stopListening();
       setIsListening(false);
+      // Send the transcript only when stopping
+      if (transcript) {
+        onTranscript(transcript);
+        resetTranscript();
+      }
     } else {
       resetTranscript();
       SpeechRecognition.startListening({ continuous: false, language: 'en-US' });
