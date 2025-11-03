@@ -60,6 +60,7 @@ export const products = pgTable("products", {
   description: text("description"),
   category: text("category").notNull(),
   barcode: text("barcode"),
+  qrCode: text("qr_code"),
   supplierId: varchar("supplier_id").references(() => suppliers.id),
   lowStockThreshold: integer("low_stock_threshold").notNull().default(50),
   createdAt: timestamp("created_at").notNull().defaultNow(),
