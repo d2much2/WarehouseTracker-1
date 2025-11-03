@@ -174,7 +174,7 @@ export default function WarehouseDetail() {
                       }
                     }}
                   />
-                  <VoiceInputButton onTranscript={(text) => setSearchQuery(prev => prev + (prev ? ' ' : '') + text)} />
+                  <VoiceInputButton onTranscript={(text) => setSearchQuery(text)} />
                 </div>
               </div>
               <CsvExportButton 

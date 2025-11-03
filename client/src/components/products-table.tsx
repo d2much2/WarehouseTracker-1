@@ -145,7 +145,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
                 }
               }}
             />
-            <VoiceInputButton onTranscript={(text) => setSearchTerm(prev => prev + (prev ? ' ' : '') + text)} />
+            <VoiceInputButton onTranscript={(text) => setSearchTerm(text)} />
           </div>
         </div>
         <AddProductDialog
