@@ -37,6 +37,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product } from "@shared/schema";
 import { VoiceInputButton } from "./voice-input-button";
 import { BarcodeScanner } from "./barcode-scanner";
+import { BarcodeGenerator } from "./barcode-generator";
 
 interface ProductsTableProps {
   products: Product[];
@@ -52,6 +53,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [productForBarcode, setProductForBarcode] = useState<Product | null>(null);
 
   const deleteProduct = useMutation({
     mutationFn: async (productId: string) => {
@@ -149,12 +151,32 @@ export function ProductsTable({ products }: ProductsTableProps) {
     }
   };
 
+  const handleGenerateBarcode = (product: Product) => {
+    if (!product.barcode) {
+      toast({
+        title: "No Barcode",
+        description: "This product doesn't have a barcode assigned.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setProductForBarcode(product);
+  };
+
   return (
     <div className="space-y-4">
       {showScanner && (
         <BarcodeScanner
           onScan={handleBarcodeScanned}
           onClose={() => setShowScanner(false)}
+        />
+      )}
+
+      {productForBarcode && (
+        <BarcodeGenerator
+          value={productForBarcode.barcode!}
+          productName={productForBarcode.name}
+          onClose={() => setProductForBarcode(null)}
         />
       )}
 
@@ -266,6 +288,11 @@ export function ProductsTable({ products }: ProductsTableProps) {
                         <DropdownMenuItem onClick={() => handleEdit(product)} data-testid={`button-edit-${product.id}`}>
                           Edit
                         </DropdownMenuItem>
+                        {product.barcode && (
+                          <DropdownMenuItem onClick={() => handleGenerateBarcode(product)} data-testid={`button-generate-barcode-${product.id}`}>
+                            Generate Barcode
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => handleDelete(product)}

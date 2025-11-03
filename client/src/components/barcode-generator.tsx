@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from "react";
+// @ts-ignore - bwip-js types may not be available
 import bwipjs from "bwip-js";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
