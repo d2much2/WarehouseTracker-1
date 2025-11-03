@@ -633,8 +633,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const messageData = {
           id: message.id,
           userId: user.id,
-          userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown',
-          userEmail: user.email || '',
+          userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || 'Unknown',
+          userUsername: user.username || '',
           recipientId: message.recipientId,
           content: message.content,
           createdAt: message.createdAt.toISOString(),

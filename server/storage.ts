@@ -577,7 +577,7 @@ export class DatabaseStorage implements IStorage {
         return {
           ...msg,
           user: sender!,
-          recipient,
+          recipient: recipient || null,
         };
       })
     );
