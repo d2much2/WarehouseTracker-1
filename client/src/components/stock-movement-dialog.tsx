@@ -31,11 +31,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Scan } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product, Warehouse } from "@shared/schema";
 import { VoiceInputButton } from "@/components/voice-input-button";
+import { BarcodeScanner } from "@/components/barcode-scanner";
 
 interface StockMovementDialogProps {
   trigger: React.ReactNode;
@@ -45,6 +47,7 @@ interface StockMovementDialogProps {
 export function StockMovementDialog({ trigger, movementType }: StockMovementDialogProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   const formSchema = insertStockMovementSchema.omit({ userId: true }).extend({
     type: z.literal(movementType),
@@ -121,6 +124,28 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
     },
   });
 
+  const handleBarcodeScanned = (barcode: string) => {
+    const product = products?.find(
+      (p) => p.barcode === barcode
+    );
+    
+    if (product) {
+      form.setValue("productId", product.id);
+      setShowScanner(false);
+      toast({
+        title: "Product Found",
+        description: `${product.name} (${product.sku}) selected`,
+      });
+    } else {
+      toast({
+        title: "Product Not Found",
+        description: `No product found with barcode: ${barcode}`,
+        variant: "destructive",
+      });
+      setShowScanner(false);
+    }
+  };
+
   const onSubmit = (data: FormValues) => {
     console.log("Submitting stock movement:", data);
     createMovement.mutate(data);
@@ -154,26 +179,45 @@ export function StockMovementDialog({ trigger, movementType }: StockMovementDial
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              {showScanner && (
+                <BarcodeScanner
+                  onScan={handleBarcodeScanned}
+                  onClose={() => setShowScanner(false)}
+                />
+              )}
+              
               <FormField
                 control={form.control}
                 name="productId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Product</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || undefined}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-product">
-                          <SelectValue placeholder="Select a product" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {products?.map((product) => (
-                          <SelectItem key={product.id} value={product.id}>
-                            {product.name} ({product.sku})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger className="flex-1" data-testid="select-product">
+                            <SelectValue placeholder="Select a product" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {products?.map((product) => (
+                            <SelectItem key={product.id} value={product.id}>
+                              {product.name} ({product.sku})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setShowScanner(!showScanner)}
+                        data-testid="button-scan-barcode"
+                        title="Scan barcode"
+                      >
+                        <Scan className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
