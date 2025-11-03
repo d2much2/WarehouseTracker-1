@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Bot, User, Sparkles } from "lucide-react";
+import { Send, Bot, User, Sparkles, Volume2, VolumeX, StopCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { VoiceInputButton } from "@/components/voice-input-button";
+import { Badge } from "@/components/ui/badge";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -25,8 +26,67 @@ export default function AIAssistant() {
     },
   ]);
   const [input, setInput] = useState("");
+  const [speechEnabled, setSpeechEnabled] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const speechSynthRef = useRef<SpeechSynthesis | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      speechSynthRef.current = window.speechSynthesis;
+      setSpeechSupported(true);
+    } else {
+      setSpeechSupported(false);
+    }
+
+    return () => {
+      if (speechSynthRef.current) {
+        speechSynthRef.current.cancel();
+      }
+    };
+  }, []);
+
+  const speakText = (text: string) => {
+    if (!speechSynthRef.current || !speechEnabled) return;
+
+    speechSynthRef.current.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    speechSynthRef.current.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    if (speechSynthRef.current) {
+      speechSynthRef.current.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  const toggleSpeech = () => {
+    if (!speechSupported) {
+      toast({
+        title: "Not Supported",
+        description: "Text-to-speech is not supported in your browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (speechEnabled) {
+      stopSpeaking();
+    }
+    setSpeechEnabled(!speechEnabled);
+  };
 
   const chatMutation = useMutation<{ response: string }, Error, string>({
     mutationFn: async (userMessage: string) => {
@@ -51,6 +111,10 @@ export default function AIAssistant() {
           timestamp: new Date(),
         },
       ]);
+      
+      if (speechEnabled) {
+        speakText(data.response);
+      }
     },
     onError: (error: any) => {
       const errorMessage = error?.message || "Failed to get response from AI assistant";
@@ -111,10 +175,57 @@ export default function AIAssistant() {
 
       <Card className="flex-1 flex flex-col min-h-0">
         <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5" />
-            Chat with AI Assistant
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              Chat with AI Assistant
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              {isSpeaking && (
+                <Badge variant="secondary" className="flex items-center gap-1" data-testid="badge-speaking">
+                  <Volume2 className="h-3 w-3" />
+                  Speaking
+                </Badge>
+              )}
+              {isSpeaking && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={stopSpeaking}
+                  data-testid="button-stop-speech"
+                  title="Stop speaking"
+                >
+                  <StopCircle className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                variant={speechEnabled ? "default" : "outline"}
+                size="sm"
+                onClick={toggleSpeech}
+                disabled={!speechSupported}
+                data-testid="button-toggle-speech"
+                title={
+                  !speechSupported 
+                    ? "Text-to-speech not supported in your browser"
+                    : speechEnabled 
+                    ? "Disable text-to-speech" 
+                    : "Enable text-to-speech"
+                }
+              >
+                {speechEnabled ? (
+                  <>
+                    <Volume2 className="h-4 w-4 mr-2" />
+                    Speech On
+                  </>
+                ) : (
+                  <>
+                    <VolumeX className="h-4 w-4 mr-2" />
+                    Speech Off
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col p-0 min-h-0">
           <ScrollArea ref={scrollAreaRef} className="flex-1 px-6">
@@ -187,9 +298,17 @@ export default function AIAssistant() {
                 <Send className="h-4 w-4" />
               </Button>
             </form>
-            <p className="text-xs text-muted-foreground mt-2">
-              Try asking: "What items are low on stock?" or "How many products do I have?"
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-muted-foreground">
+                Try asking: "What items are low on stock?" or "How many products do I have?"
+              </p>
+              {speechEnabled && (
+                <p className="text-xs text-primary flex items-center gap-1" data-testid="text-speech-enabled">
+                  <Volume2 className="h-3 w-3" />
+                  Speech enabled
+                </p>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

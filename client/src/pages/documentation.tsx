@@ -205,6 +205,7 @@ export default function Documentation() {
                 <li>Proactive suggestions and recommendations</li>
                 <li>Low stock alerts and reorder suggestions</li>
                 <li>Conversational interface powered by OpenAI</li>
+                <li>Text-to-speech responses for hands-free operation</li>
               </ul>
             </CardContent>
           </Card>
