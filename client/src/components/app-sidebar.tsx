@@ -117,7 +117,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar>
+    <Sidebar className="opacity-70">
       <SidebarHeader>
         <div className="p-4 space-y-4 border-b">
           <div className="flex items-center gap-2">
