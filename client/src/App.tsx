@@ -25,6 +25,7 @@ import Alerts from "@/pages/alerts";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Messaging from "@/pages/messaging";
+import AIAssistant from "@/pages/ai-assistant";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,6 +79,7 @@ function AuthenticatedRoutesInner() {
               <Route path="/reports" component={Reports} />
               <Route path="/settings" component={Settings} />
               <Route path="/messages" component={Messaging} />
+              <Route path="/ai-assistant" component={AIAssistant} />
               <Route component={NotFound} />
             </Switch>
 

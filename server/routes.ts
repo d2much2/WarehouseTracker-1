@@ -15,6 +15,7 @@ import {
 import { z } from "zod";
 import Papa from "papaparse";
 import type { WebSocketMessage } from "@shared/websocket-types";
+import { chatWithAssistant } from "./ai-assistant";
 
 function broadcastToClients(wss: WebSocketServer, message: WebSocketMessage) {
   const payload = JSON.stringify(message);
@@ -840,6 +841,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error downloading inventory CSV:", error);
       res.status(500).json({ message: "Failed to export inventory" });
+    }
+  });
+
+  app.post("/api/ai/chat", isAuthenticated, async (req, res) => {
+    try {
+      const { message, conversationHistory = [] } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ message: "Message is required" });
+      }
+      
+      const response = await chatWithAssistant(message, conversationHistory);
+      
+      res.json({ response });
+    } catch (error) {
+      console.error("Error in AI chat:", error);
+      res.status(500).json({ message: "Failed to get AI response" });
     }
   });
 

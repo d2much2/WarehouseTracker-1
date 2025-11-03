@@ -9,6 +9,7 @@ import {
   Bell,
   LogOut,
   MessageSquare,
+  Sparkles,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -64,6 +65,11 @@ const mainMenuItems = [
     title: "Messages",
     url: "/messages",
     icon: MessageSquare,
+  },
+  {
+    title: "AI Assistant",
+    url: "/ai-assistant",
+    icon: Sparkles,
   },
 ];
 
