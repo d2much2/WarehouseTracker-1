@@ -14,11 +14,8 @@ import { WebSocketStatus } from "@/components/websocket-status";
 import { MessagingPanel } from "@/components/messaging-panel";
 import { LoadingPage } from "@/components/loading-page";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Package } from "lucide-react";
-// To use your own logo image:
-// 1. Place your logo file in: attached_assets/logo.png (or .jpg, .svg)
-// 2. Uncomment the line below and update the path:
-// import logoUrl from "@assets/logo.png";
+import { MessageSquare } from "lucide-react";
+import logoUrl from "@assets/proicon/prosupply.png";
 import Dashboard from "@/pages/dashboard";
 import Products from "@/pages/products";
 import Warehouses from "@/pages/warehouses";
@@ -67,15 +64,9 @@ function AuthenticatedRoutesInner() {
           <header className="flex items-center justify-between gap-4 p-4 border-b">
             <div className="flex items-center gap-3">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
-              {/* Logo - Replace Package icon with your own image */}
               <div className="flex items-center gap-2">
-                {/* Option 1: Using an icon (current) */}
-                <Package className="h-6 w-6 text-primary" />
-                
-                {/* Option 2: Using your own image (uncomment after adding logo file) */}
-                {/* <img src={logoUrl} alt="Company Logo" className="h-8 w-auto" /> */}
-                
-                <span className="font-semibold text-lg hidden sm:inline">WareTrack</span>
+                <img src={logoUrl} alt="ProSupply Logo" className="h-8 w-auto" />
+                <span className="font-semibold text-lg hidden sm:inline">ProSupply</span>
               </div>
             </div>
             <div className="flex items-center gap-3">
