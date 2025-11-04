@@ -17,16 +17,24 @@ export function useMicrophonePermission() {
 
     const requestMicrophoneAccess = async () => {
       if (hasSuccessfullyRequested || hasAttemptedRequest.current) {
+        console.log('[Microphone] Skipping request - already attempted or successful');
         return;
       }
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('[Microphone] getUserMedia not supported');
         return;
       }
 
       if (document.visibilityState !== 'visible') {
+        console.log('[Microphone] Tab not visible - deferring request');
         return;
       }
+
+      console.log('[Microphone] Requesting microphone access...');
+      console.log('[Microphone] Context secure:', window.isSecureContext);
+      console.log('[Microphone] Protocol:', window.location.protocol);
+      console.log('[Microphone] Hostname:', window.location.hostname);
 
       hasAttemptedRequest.current = true;
 
@@ -38,7 +46,14 @@ export function useMicrophonePermission() {
         
         hasSuccessfullyRequested = true;
         setPermissionStatus('granted');
+        console.log('[Microphone] Permission granted successfully');
       } catch (error: any) {
+        console.error('[Microphone] Error requesting permission:', {
+          name: error.name,
+          message: error.message,
+          isSecureContext: window.isSecureContext
+        });
+        
         if (error.name === 'NotFoundError') {
           setPermissionStatus('denied');
           hasSuccessfullyRequested = true;
@@ -52,14 +67,18 @@ export function useMicrophonePermission() {
 
     const checkAndRequestPermission = async () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('[Microphone] MediaDevices API not available');
         setPermissionStatus('denied');
         return;
       }
+
+      console.log('[Microphone] Initializing permission check');
 
       try {
         if ('permissions' in navigator) {
           const permissionResult = await navigator.permissions.query({ name: 'microphone' as PermissionName });
           
+          console.log('[Microphone] Current permission state:', permissionResult.state);
           setPermissionStatus(permissionResult.state as 'granted' | 'denied' | 'prompt');
           
           if (permissionResult.state === 'granted') {
@@ -74,6 +93,7 @@ export function useMicrophonePermission() {
           
           permissionResult.onchange = () => {
             const newState = permissionResult.state as 'granted' | 'denied' | 'prompt';
+            console.log('[Microphone] Permission changed to:', newState);
             setPermissionStatus(newState);
             if (newState === 'granted' || newState === 'denied') {
               hasSuccessfullyRequested = true;
@@ -81,7 +101,7 @@ export function useMicrophonePermission() {
           };
         }
       } catch (error) {
-        // Permissions API not available (Safari) - continue to request
+        console.log('[Microphone] Permissions API not available (Safari) - will request directly');
       }
 
       await requestMicrophoneAccess();

@@ -20,7 +20,13 @@ export function VoiceInputButton({ onTranscript, className }: VoiceInputButtonPr
     isMicrophoneAvailable,
   } = useSpeechRecognition();
 
-  const toggleListening = () => {
+  const toggleListening = async () => {
+    console.log('[VoiceInput] Toggle listening clicked');
+    console.log('[VoiceInput] Browser supports speech:', browserSupportsSpeechRecognition);
+    console.log('[VoiceInput] Microphone available:', isMicrophoneAvailable);
+    console.log('[VoiceInput] Is secure context:', window.isSecureContext);
+    console.log('[VoiceInput] Protocol:', window.location.protocol);
+
     if (!browserSupportsSpeechRecognition) {
       toast({
         title: "Not Supported",
@@ -31,18 +37,42 @@ export function VoiceInputButton({ onTranscript, className }: VoiceInputButtonPr
     }
 
     if (!isMicrophoneAvailable) {
-      toast({
-        title: "Microphone Access Required",
-        description: "Please allow microphone access to use voice input.",
-        variant: "destructive",
-      });
-      return;
+      console.log('[VoiceInput] Attempting to request microphone permission manually');
+      
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+        console.log('[VoiceInput] Manual permission request succeeded');
+        
+        toast({
+          title: "Permission Granted",
+          description: "Please click the microphone button again to start voice input.",
+        });
+        return;
+      } catch (error: any) {
+        console.error('[VoiceInput] Manual permission request failed:', error);
+        
+        let description = "Please allow microphone access to use voice input.";
+        if (!window.isSecureContext) {
+          description = "Microphone requires HTTPS. Please access this app via a secure connection.";
+        } else if (error.name === 'NotAllowedError') {
+          description = "Microphone access was denied. Please check your browser settings.";
+        } else if (error.name === 'NotFoundError') {
+          description = "No microphone device found. Please connect a microphone.";
+        }
+        
+        toast({
+          title: "Microphone Access Required",
+          description,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     if (isListening) {
       SpeechRecognition.stopListening();
       setIsListening(false);
-      // Send the transcript only when stopping
       if (transcript) {
         onTranscript(transcript);
         resetTranscript();
