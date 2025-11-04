@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
+import { useMicrophonePermission } from "@/hooks/useMicrophonePermission";
 import { WebSocketProvider, useWebSocketContext } from "@/contexts/WebSocketContext";
 import { WebSocketStatus } from "@/components/websocket-status";
 import { MessagingPanel } from "@/components/messaging-panel";
@@ -65,6 +66,8 @@ function AuthenticatedRoutesInner() {
   const { connectionStatus } = useWebSocketContext();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [location] = useLocation();
+  useMicrophonePermission();
+  
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
