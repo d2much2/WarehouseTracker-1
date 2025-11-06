@@ -6,6 +6,9 @@ import {
   inventoryLevels,
   stockMovements,
   messages,
+  customers,
+  orders,
+  orderItems,
   type User,
   type UpsertUser,
   type Product,
@@ -20,6 +23,12 @@ import {
   type InsertStockMovement,
   type Message,
   type InsertMessage,
+  type Customer,
+  type InsertCustomer,
+  type Order,
+  type InsertOrder,
+  type OrderItem,
+  type InsertOrderItem,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, desc, sql, sum, count } from "drizzle-orm";
@@ -87,6 +96,19 @@ export interface IStorage {
     lowStockCount: number;
     activeWarehouses: number;
   }>;
+  
+  getAllCustomers(): Promise<Customer[]>;
+  getCustomer(id: string): Promise<Customer | undefined>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer | undefined>;
+  deleteCustomer(id: string): Promise<void>;
+  
+  getAllOrders(): Promise<Array<Order & { customer: Customer; user: User }>>;
+  getOrder(id: string): Promise<(Order & { customer: Customer; user: User; items: Array<OrderItem & { product: Product; warehouse: Warehouse }> }) | undefined>;
+  createOrder(order: InsertOrder, items: InsertOrderItem[]): Promise<Order>;
+  updateOrderStatus(id: string, status: string): Promise<Order | undefined>;
+  fulfillOrder(id: string, userId: string): Promise<void>;
+  getOrdersByCustomer(customerId: string): Promise<Array<Order & { user: User }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -620,6 +642,164 @@ export class DatabaseStorage implements IStorage {
       lowStockCount: lowStockItems.length,
       activeWarehouses: activeWarehouseCount.count,
     };
+  }
+
+  async getAllCustomers(): Promise<Customer[]> {
+    return await db.select().from(customers).orderBy(desc(customers.createdAt));
+  }
+
+  async getCustomer(id: string): Promise<Customer | undefined> {
+    const [customer] = await db.select().from(customers).where(eq(customers.id, id));
+    return customer;
+  }
+
+  async createCustomer(customer: InsertCustomer): Promise<Customer> {
+    const [newCustomer] = await db.insert(customers).values(customer).returning();
+    return newCustomer;
+  }
+
+  async updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer | undefined> {
+    const [updatedCustomer] = await db
+      .update(customers)
+      .set(customer)
+      .where(eq(customers.id, id))
+      .returning();
+    return updatedCustomer;
+  }
+
+  async deleteCustomer(id: string): Promise<void> {
+    await db.delete(customers).where(eq(customers.id, id));
+  }
+
+  async getAllOrders(): Promise<Array<Order & { customer: Customer; user: User }>> {
+    const orderList = await db.select().from(orders).orderBy(desc(orders.createdAt));
+    
+    const enrichedOrders = await Promise.all(
+      orderList.map(async (order) => {
+        const customer = await this.getCustomer(order.customerId);
+        const user = await this.getUser(order.userId);
+        
+        return {
+          ...order,
+          customer: customer!,
+          user: user!,
+        };
+      })
+    );
+    
+    return enrichedOrders;
+  }
+
+  async getOrder(id: string): Promise<(Order & { customer: Customer; user: User; items: Array<OrderItem & { product: Product; warehouse: Warehouse }> }) | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    
+    if (!order) return undefined;
+    
+    const customer = await this.getCustomer(order.customerId);
+    const user = await this.getUser(order.userId);
+    
+    const items = await db.select().from(orderItems).where(eq(orderItems.orderId, id));
+    
+    const enrichedItems = await Promise.all(
+      items.map(async (item) => {
+        const product = await this.getProduct(item.productId);
+        const warehouse = await this.getWarehouse(item.warehouseId);
+        
+        return {
+          ...item,
+          product: product!,
+          warehouse: warehouse!,
+        };
+      })
+    );
+    
+    return {
+      ...order,
+      customer: customer!,
+      user: user!,
+      items: enrichedItems,
+    };
+  }
+
+  async createOrder(order: InsertOrder, items: InsertOrderItem[]): Promise<Order> {
+    const [newOrder] = await db.insert(orders).values(order).returning();
+    
+    if (items.length > 0) {
+      await db.insert(orderItems).values(items);
+    }
+    
+    return newOrder;
+  }
+
+  async updateOrderStatus(id: string, status: string): Promise<Order | undefined> {
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(orders.id, id))
+      .returning();
+    return updatedOrder;
+  }
+
+  async fulfillOrder(id: string, userId: string): Promise<void> {
+    const order = await this.getOrder(id);
+    
+    if (!order || order.status === 'fulfilled') {
+      return;
+    }
+    
+    for (const item of order.items) {
+      const [currentInventory] = await db
+        .select()
+        .from(inventoryLevels)
+        .where(
+          and(
+            eq(inventoryLevels.productId, item.productId),
+            eq(inventoryLevels.warehouseId, item.warehouseId)
+          )
+        );
+      
+      if (currentInventory) {
+        await db
+          .update(inventoryLevels)
+          .set({
+            quantity: currentInventory.quantity - item.quantity,
+            updatedAt: new Date(),
+          })
+          .where(eq(inventoryLevels.id, currentInventory.id));
+      }
+      
+      await this.createStockMovement({
+        productId: item.productId,
+        warehouseId: item.warehouseId,
+        type: 'out',
+        quantity: item.quantity,
+        notes: `Order #${order.orderNumber} fulfilled`,
+        userId,
+      });
+    }
+    
+    await this.updateOrderStatus(id, 'fulfilled');
+  }
+
+  async getOrdersByCustomer(customerId: string): Promise<Array<Order & { user: User }>> {
+    const orderList = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.customerId, customerId))
+      .orderBy(desc(orders.createdAt));
+    
+    const enrichedOrders = await Promise.all(
+      orderList.map(async (order) => {
+        const user = await this.getUser(order.userId);
+        
+        return {
+          ...order,
+          user: user!,
+        };
+      })
+    );
+    
+    return enrichedOrders;
   }
 }
 
