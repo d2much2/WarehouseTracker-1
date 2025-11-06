@@ -95,6 +95,10 @@ export interface IStorage {
     stockValue: number;
     lowStockCount: number;
     activeWarehouses: number;
+    totalOrders: number;
+    pendingOrders: number;
+    fulfilledOrders: number;
+    totalRevenue: string;
   }>;
   
   getAllCustomers(): Promise<Customer[]>;
@@ -612,6 +616,10 @@ export class DatabaseStorage implements IStorage {
     stockValue: number;
     lowStockCount: number;
     activeWarehouses: number;
+    totalOrders: number;
+    pendingOrders: number;
+    fulfilledOrders: number;
+    totalRevenue: string;
   }> {
     const [productCount] = await db
       .select({ count: count() })
@@ -636,11 +644,34 @@ export class DatabaseStorage implements IStorage {
       .from(warehouses)
       .where(eq(warehouses.status, "active"));
 
+    const [totalOrdersResult] = await db
+      .select({ count: count() })
+      .from(orders);
+
+    const [pendingOrdersResult] = await db
+      .select({ count: count() })
+      .from(orders)
+      .where(eq(orders.status, "pending"));
+
+    const [fulfilledOrdersResult] = await db
+      .select({ count: count() })
+      .from(orders)
+      .where(eq(orders.status, "fulfilled"));
+
+    const [totalRevenueResult] = await db
+      .select({ total: sum(orders.totalAmount) })
+      .from(orders)
+      .where(eq(orders.status, "fulfilled"));
+
     return {
       totalProducts: productCount.count,
       stockValue: Number(totalInventory.total) || 0,
       lowStockCount: lowStockItems.length,
       activeWarehouses: activeWarehouseCount.count,
+      totalOrders: totalOrdersResult.count,
+      pendingOrders: pendingOrdersResult.count,
+      fulfilledOrders: fulfilledOrdersResult.count,
+      totalRevenue: totalRevenueResult.total || "0",
     };
   }
 
