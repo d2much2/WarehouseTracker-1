@@ -12,6 +12,9 @@ import {
   insertStockMovementSchema,
   insertInventoryLevelSchema,
   insertMessageSchema,
+  insertCustomerSchema,
+  insertOrderSchema,
+  insertOrderItemSchema,
   signupSchema,
   loginSchema,
 } from "@shared/schema";
@@ -916,6 +919,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: z.string(),
       })
     ).optional().default([]),
+  });
+
+  // Customer routes
+  app.get("/api/customers", isAuthenticated, async (_req, res) => {
+    try {
+      const customers = await storage.getAllCustomers();
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+
+  app.get("/api/customers/:id", isAuthenticated, async (req, res) => {
+    try {
+      const customer = await storage.getCustomer(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error("Error fetching customer:", error);
+      res.status(500).json({ message: "Failed to fetch customer" });
+    }
+  });
+
+  app.post("/api/customers", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertCustomerSchema.parse(req.body);
+      const customer = await storage.createCustomer(validatedData);
+      res.status(201).json(customer);
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      res.status(400).json({ message: "Invalid customer data" });
+    }
+  });
+
+  app.patch("/api/customers/:id", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertCustomerSchema.partial().parse(req.body);
+      const customer = await storage.updateCustomer(req.params.id, validatedData);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      res.status(400).json({ message: "Invalid customer data" });
+    }
+  });
+
+  app.delete("/api/customers/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteCustomer(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      res.status(500).json({ message: "Failed to delete customer" });
+    }
+  });
+
+  // Order routes
+  app.get("/api/orders", isAuthenticated, async (_req, res) => {
+    try {
+      const orders = await storage.getAllOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ message: "Failed to fetch orders" });
+    }
+  });
+
+  app.get("/api/orders/:id", isAuthenticated, async (req, res) => {
+    try {
+      const order = await storage.getOrder(req.params.id);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      res.status(500).json({ message: "Failed to fetch order" });
+    }
+  });
+
+  app.post("/api/orders", isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const orderSchema = z.object({
+        customerId: z.string(),
+        status: z.enum(['pending', 'processing', 'fulfilled', 'cancelled']).optional(),
+        totalAmount: z.string(),
+        notes: z.string().optional(),
+        items: z.array(z.object({
+          productId: z.string(),
+          warehouseId: z.string(),
+          quantity: z.number().int().positive(),
+          unitPrice: z.string(),
+          subtotal: z.string(),
+        })),
+      });
+
+      const validatedData = orderSchema.parse(req.body);
+      
+      const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      
+      const order = await storage.createOrder(
+        {
+          orderNumber,
+          customerId: validatedData.customerId,
+          status: validatedData.status || 'pending',
+          totalAmount: validatedData.totalAmount,
+          notes: validatedData.notes,
+          userId: req.user.id,
+        },
+        validatedData.items.map(item => ({
+          orderId: '', // Will be set by the database
+          productId: item.productId,
+          warehouseId: item.warehouseId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          subtotal: item.subtotal,
+        }))
+      );
+
+      res.status(201).json(order);
+    } catch (error) {
+      console.error("Error creating order:", error);
+      res.status(400).json({ message: "Invalid order data" });
+    }
+  });
+
+  app.patch("/api/orders/:id/status", isAuthenticated, async (req, res) => {
+    try {
+      const statusSchema = z.object({
+        status: z.enum(['pending', 'processing', 'fulfilled', 'cancelled']),
+      });
+
+      const { status } = statusSchema.parse(req.body);
+      const order = await storage.updateOrderStatus(req.params.id, status);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      res.json(order);
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      res.status(400).json({ message: "Invalid status" });
+    }
+  });
+
+  app.post("/api/orders/:id/fulfill", isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      await storage.fulfillOrder(req.params.id, req.user.id);
+      
+      const order = await storage.getOrder(req.params.id);
+      res.json(order);
+    } catch (error) {
+      console.error("Error fulfilling order:", error);
+      res.status(500).json({ message: "Failed to fulfill order" });
+    }
+  });
+
+  app.get("/api/customers/:customerId/orders", isAuthenticated, async (req, res) => {
+    try {
+      const orders = await storage.getOrdersByCustomer(req.params.customerId);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching customer orders:", error);
+      res.status(500).json({ message: "Failed to fetch customer orders" });
+    }
   });
 
   app.post("/api/ai/chat", isAuthenticated, async (req, res) => {
