@@ -7,7 +7,7 @@ import { StockMovementDialog } from "@/components/stock-movement-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
-import { Package, DollarSign, AlertTriangle, Warehouse, ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft, ShoppingCart, Clock, CheckCircle, TrendingUp } from "lucide-react";
+import { Package, DollarSign, AlertTriangle, Warehouse as WarehouseIcon, ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft, ShoppingCart, Clock, CheckCircle, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { formatDistanceToNow } from "date-fns";
@@ -137,7 +137,7 @@ export default function Dashboard() {
             <KpiCard
               title="Active Warehouses"
               value={kpis?.activeWarehouses || 0}
-              icon={Warehouse}
+              icon={WarehouseIcon}
             />
           </>
         )}

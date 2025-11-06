@@ -485,7 +485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/stock-movements", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertStockMovementSchema.parse({
         ...req.body,
         userId,
