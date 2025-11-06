@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { formatDistanceToNow } from "date-fns";
 
+import type { StockMovement, InventoryLevel, Product, Warehouse, User } from "@shared/schema";
+
 interface DashboardKPIs {
   totalProducts: number;
   stockValue: number;
@@ -23,30 +25,8 @@ interface DashboardKPIs {
   totalRevenue: string;
 }
 
-interface RecentMovement {
-  id: string;
-  productId: string;
-  warehouseId: string;
-  type: "in" | "out" | "transfer" | "adjustment";
-  quantity: number;
-  row: string | null;
-  shelf: string | null;
-  userId: string;
-  createdAt: string;
-}
-
-interface LowStockAlert {
-  id: string;
-  quantity: number;
-  warehouseId: string;
-  row: string | null;
-  shelf: string | null;
-  product: {
-    name: string;
-    sku: string;
-    lowStockThreshold: number;
-  };
-}
+type RecentMovementDTO = StockMovement & { product: Product; warehouse: Warehouse; user: User; targetWarehouse?: Warehouse };
+type LowStockAlertDTO = InventoryLevel & { product: Product; warehouse: Warehouse };
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -56,12 +36,12 @@ export default function Dashboard() {
     retry: false,
   });
 
-  const { data: recentMovementsData, isLoading: movementsLoading, error: movementsError } = useQuery<RecentMovement[]>({
+  const { data: recentMovementsData, isLoading: movementsLoading, error: movementsError } = useQuery<RecentMovementDTO[]>({
     queryKey: ["/api/stock-movements/recent"],
     retry: false,
   });
 
-  const { data: lowStockData, isLoading: alertsLoading, error: alertsError } = useQuery<LowStockAlert[]>({
+  const { data: lowStockData, isLoading: alertsLoading, error: alertsError } = useQuery<LowStockAlertDTO[]>({
     queryKey: ["/api/inventory/low-stock"],
     retry: false,
   });
@@ -95,13 +75,13 @@ export default function Dashboard() {
 
   const recentMovements = recentMovementsData?.map((movement) => ({
     id: movement.id,
-    product: movement.productId,
+    product: movement.product.name,
     type: movement.type,
     quantity: movement.quantity,
-    warehouse: movement.warehouseId,
+    warehouse: movement.warehouse.name,
     row: movement.row,
     shelf: movement.shelf,
-    user: movement.userId,
+    user: movement.user.username,
     timestamp: formatDistanceToNow(new Date(movement.createdAt), { addSuffix: true }),
   })) || [];
 
@@ -111,7 +91,7 @@ export default function Dashboard() {
     sku: alert.product.sku,
     currentStock: alert.quantity,
     threshold: alert.product.lowStockThreshold,
-    warehouse: alert.warehouseId,
+    warehouse: alert.warehouse.name,
     row: alert.row,
     shelf: alert.shelf,
   })) || [];
