@@ -11,6 +11,8 @@ import {
   MessageSquare,
   Sparkles,
   BookOpen,
+  ShoppingCart,
+  UserCircle,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -56,6 +58,16 @@ const mainMenuItems = [
     title: "Stock Movements",
     url: "/movements",
     icon: ArrowRightLeft,
+  },
+  {
+    title: "Orders",
+    url: "/orders",
+    icon: ShoppingCart,
+  },
+  {
+    title: "Customers",
+    url: "/customers",
+    icon: UserCircle,
   },
   {
     title: "Alerts",
