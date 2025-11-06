@@ -34,6 +34,7 @@ import Orders from "@/pages/orders";
 import OrderDetail from "@/pages/order-detail";
 import Customers from "@/pages/customers";
 import MobileInventory from "@/pages/mobile-inventory";
+import Labels from "@/pages/labels";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import NotFound from "@/pages/not-found";
@@ -127,6 +128,7 @@ function AuthenticatedRoutesInner() {
               <Route path="/orders" component={Orders} />
               <Route path="/customers" component={Customers} />
               <Route path="/mobile-inventory" component={MobileInventory} />
+              <Route path="/labels" component={Labels} />
               <Route component={NotFound} />
             </Switch>
 

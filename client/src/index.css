@@ -4,6 +4,37 @@
 @tailwind components;
 @tailwind utilities;
 
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .labels-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    page-break-inside: avoid;
+  }
+
+  .label-container {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+.print-only {
+  display: none;
+}
+
 /* LIGHT MODE */
 :root {
   --button-outline: rgba(0,0,0, .10);
