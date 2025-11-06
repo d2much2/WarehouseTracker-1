@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 // @ts-ignore - bwip-js types may not be available
 import bwipjs from "bwip-js";
 import type { Product, Warehouse } from "@shared/schema";
+import logoUrl from "@assets/proicon2/Lowes_Companies_Logo.svg.png";
 
 interface ProductLabelProps {
   product: Product;
@@ -51,6 +52,10 @@ export function ProductLabel({ product, warehouse, inventory }: ProductLabelProp
   return (
     <div className="label-container border-2 border-border rounded-md p-4 bg-background" data-testid={`label-${product.id}`}>
       <div className="label-content space-y-3">
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <img src={logoUrl} alt="Logo" className="h-8 w-auto" />
+        </div>
+        
         <div className="label-header">
           <h3 className="font-bold text-lg leading-tight mb-1">{product.name}</h3>
           <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
