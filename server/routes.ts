@@ -1004,7 +1004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/orders", isAuthenticated, async (req, res) => {
+  app.post("/api/orders", isAuthenticated, async (req: any, res) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -1074,7 +1074,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/orders/:id/fulfill", isAuthenticated, async (req, res) => {
+  app.post("/api/orders/:id/fulfill", isAuthenticated, async (req: any, res) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ message: "Unauthorized" });
