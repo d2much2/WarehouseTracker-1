@@ -37,7 +37,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertCustomerSchema, type Customer, type InsertCustomer } from "@shared/schema";
+import { customers, type Customer } from "@shared/schema";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
+type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 
 export default function Customers() {
   const { toast } = useToast();
