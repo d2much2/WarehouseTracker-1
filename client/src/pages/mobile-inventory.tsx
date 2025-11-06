@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Search, ScanBarcode, Plus, Minus, Package, MapPin, AlertTriangle } from "lucide-react";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { Search, ScanBarcode, Plus, Minus, Package, MapPin, AlertTriangle, RefreshCw } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import {
@@ -45,8 +46,26 @@ export default function MobileInventory() {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [updateQuantity, setUpdateQuantity] = useState(0);
 
-  const { data: inventory, isLoading } = useQuery<InventoryItem[]>({
+  const { data: inventory, isLoading, refetch } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory/all-with-details"],
+    enabled: true,
+  });
+
+  const {
+    containerRef,
+    pullDistance,
+    isRefreshing,
+    refreshIndicatorOpacity,
+    refreshIndicatorRotation,
+    shouldTrigger,
+  } = usePullToRefresh({
+    onRefresh: async () => {
+      await refetch();
+      toast({
+        title: "Refreshed",
+        description: "Inventory data has been updated",
+      });
+    },
     enabled: true,
   });
 
@@ -103,7 +122,22 @@ export default function MobileInventory() {
   };
 
   return (
-    <div className="min-h-screen pb-20">
+    <div ref={containerRef} className="min-h-screen pb-20 overflow-auto">
+      {pullDistance > 0 && (
+        <div
+          className="flex items-center justify-center py-4 transition-opacity"
+          style={{ opacity: refreshIndicatorOpacity }}
+        >
+          <RefreshCw
+            className={`h-6 w-6 text-primary ${shouldTrigger ? "animate-spin" : ""}`}
+            style={{ transform: `rotate(${refreshIndicatorRotation}deg)` }}
+          />
+          <span className="ml-2 text-sm text-muted-foreground">
+            {shouldTrigger ? "Release to refresh" : "Pull to refresh"}
+          </span>
+        </div>
+      )}
+      
       <div className="sticky top-0 z-10 bg-background border-b p-4 space-y-3">
         <h1 className="text-2xl font-semibold">Quick Inventory</h1>
         
