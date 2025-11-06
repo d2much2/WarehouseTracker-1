@@ -64,7 +64,7 @@ export interface IStorage {
   getInventoryByProduct(productId: string): Promise<InventoryLevel[]>;
   getInventoryByWarehouse(warehouseId: string): Promise<InventoryLevel[]>;
   getWarehouseInventoryWithProducts(warehouseId: string): Promise<Array<InventoryLevel & { product: Product }>>;
-  getLowStockAlerts(): Promise<Array<InventoryLevel & { product: Product }>>;
+  getLowStockAlerts(): Promise<Array<InventoryLevel & { product: Product; warehouse: Warehouse }>>;
   updateInventoryLevel(data: InsertInventoryLevel): Promise<InventoryLevel>;
   bulkUpdateInventoryLevels(levels: InsertInventoryLevel[]): Promise<InventoryLevel[]>;
   getAllInventoryLevels(): Promise<InventoryLevel[]>;
@@ -83,7 +83,7 @@ export interface IStorage {
   
   createStockMovement(movement: InsertStockMovement): Promise<StockMovement>;
   getStockMovements(filters?: { productId?: string; warehouseId?: string; type?: string }): Promise<StockMovement[]>;
-  getRecentMovements(limit?: number): Promise<StockMovement[]>;
+  getRecentMovements(limit?: number): Promise<Array<StockMovement & { product: Product; warehouse: Warehouse; user: User; targetWarehouse?: Warehouse }>>;
   
   getAllUsers(): Promise<User[]>;
   createMessage(message: InsertMessage): Promise<Message>;
