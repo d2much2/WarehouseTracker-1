@@ -110,7 +110,7 @@ export interface IStorage {
   getAllOrders(): Promise<Array<Order & { customer: Customer; user: User }>>;
   getOrder(id: string): Promise<(Order & { customer: Customer; user: User; items: Array<OrderItem & { product: Product; warehouse: Warehouse }> }) | undefined>;
   createOrder(order: InsertOrder, items: InsertOrderItem[]): Promise<Order>;
-  updateOrderStatus(id: string, status: string): Promise<Order | undefined>;
+  updateOrderStatus(id: string, status: "pending" | "processing" | "fulfilled" | "cancelled"): Promise<Order | undefined>;
   fulfillOrder(id: string, userId: string): Promise<void>;
   getOrdersByCustomer(customerId: string): Promise<Array<Order & { user: User }>>;
 }
@@ -762,7 +762,7 @@ export class DatabaseStorage implements IStorage {
     return newOrder;
   }
 
-  async updateOrderStatus(id: string, status: string): Promise<Order | undefined> {
+  async updateOrderStatus(id: string, status: "pending" | "processing" | "fulfilled" | "cancelled"): Promise<Order | undefined> {
     const [updatedOrder] = await db
       .update(orders)
       .set({ status, updatedAt: new Date() })

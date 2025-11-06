@@ -7,25 +7,61 @@ import { StockMovementDialog } from "@/components/stock-movement-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
-import { Package, DollarSign, AlertTriangle, Warehouse, ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft } from "lucide-react";
+import { Package, DollarSign, AlertTriangle, Warehouse, ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft, ShoppingCart, Clock, CheckCircle, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { formatDistanceToNow } from "date-fns";
 
+interface DashboardKPIs {
+  totalProducts: number;
+  stockValue: number;
+  lowStockCount: number;
+  activeWarehouses: number;
+  totalOrders: number;
+  pendingOrders: number;
+  fulfilledOrders: number;
+  totalRevenue: string;
+}
+
+interface RecentMovement {
+  id: string;
+  productId: string;
+  warehouseId: string;
+  type: "in" | "out" | "transfer" | "adjustment";
+  quantity: number;
+  row: string | null;
+  shelf: string | null;
+  userId: string;
+  createdAt: string;
+}
+
+interface LowStockAlert {
+  id: string;
+  quantity: number;
+  warehouseId: string;
+  row: string | null;
+  shelf: string | null;
+  product: {
+    name: string;
+    sku: string;
+    lowStockThreshold: number;
+  };
+}
+
 export default function Dashboard() {
   const { toast } = useToast();
 
-  const { data: kpis, isLoading: kpisLoading, error: kpisError } = useQuery({
+  const { data: kpis, isLoading: kpisLoading, error: kpisError } = useQuery<DashboardKPIs>({
     queryKey: ["/api/dashboard/kpis"],
     retry: false,
   });
 
-  const { data: recentMovementsData, isLoading: movementsLoading, error: movementsError } = useQuery({
+  const { data: recentMovementsData, isLoading: movementsLoading, error: movementsError } = useQuery<RecentMovement[]>({
     queryKey: ["/api/stock-movements/recent"],
     retry: false,
   });
 
-  const { data: lowStockData, isLoading: alertsLoading, error: alertsError } = useQuery({
+  const { data: lowStockData, isLoading: alertsLoading, error: alertsError } = useQuery<LowStockAlert[]>({
     queryKey: ["/api/inventory/low-stock"],
     retry: false,
   });
@@ -57,7 +93,7 @@ export default function Dashboard() {
     return value.toLocaleString();
   };
 
-  const recentMovements = recentMovementsData?.map((movement: any) => ({
+  const recentMovements = recentMovementsData?.map((movement) => ({
     id: movement.id,
     product: movement.productId,
     type: movement.type,
@@ -69,7 +105,7 @@ export default function Dashboard() {
     timestamp: formatDistanceToNow(new Date(movement.createdAt), { addSuffix: true }),
   })) || [];
 
-  const lowStockAlerts = lowStockData?.map((alert: any) => ({
+  const lowStockAlerts = lowStockData?.map((alert) => ({
     id: alert.id,
     product: alert.product.name,
     sku: alert.product.sku,
@@ -125,6 +161,53 @@ export default function Dashboard() {
             />
           </>
         )}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Order Statistics</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {kpisLoading ? (
+            <>
+              <Skeleton className="h-32" />
+              <Skeleton className="h-32" />
+              <Skeleton className="h-32" />
+              <Skeleton className="h-32" />
+            </>
+          ) : kpisError ? (
+            <div className="col-span-full">
+              <Card className="p-4">
+                <p className="text-sm text-destructive">Failed to load order statistics. Please try again.</p>
+              </Card>
+            </div>
+          ) : (
+            <>
+              <KpiCard
+                title="Total Orders"
+                value={kpis?.totalOrders || 0}
+                icon={ShoppingCart}
+                data-testid="kpi-total-orders"
+              />
+              <KpiCard
+                title="Pending Orders"
+                value={kpis?.pendingOrders || 0}
+                icon={Clock}
+                data-testid="kpi-pending-orders"
+              />
+              <KpiCard
+                title="Fulfilled Orders"
+                value={kpis?.fulfilledOrders || 0}
+                icon={CheckCircle}
+                data-testid="kpi-fulfilled-orders"
+              />
+              <KpiCard
+                title="Total Revenue"
+                value={`$${parseFloat(kpis?.totalRevenue || "0").toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                icon={TrendingUp}
+                data-testid="kpi-total-revenue"
+              />
+            </>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
