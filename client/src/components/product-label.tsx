@@ -51,15 +51,15 @@ export function ProductLabel({ product, warehouse, inventory, customer }: Produc
   }, [product.qrCode]);
 
   return (
-    <div className="label-container border-2 border-border rounded-md p-4 bg-background" data-testid={`label-${product.id}`}>
+    <div className="label-container border-2 border-gray-300 rounded-md p-4 bg-white text-gray-900" data-testid={`label-${product.id}`}>
       <div className="label-content space-y-3">
         <div className="flex items-start justify-between gap-3 mb-2">
           <img src={logoUrl} alt="Logo" className="h-8 w-auto" />
         </div>
         
         <div className="label-header">
-          <h3 className="font-bold text-lg leading-tight mb-1">{product.name}</h3>
-          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+          <h3 className="font-bold text-lg leading-tight mb-1 text-gray-900">{product.name}</h3>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
             <div>
               <span className="font-medium">SKU:</span> <span className="font-mono">{product.sku}</span>
             </div>
@@ -70,7 +70,7 @@ export function ProductLabel({ product, warehouse, inventory, customer }: Produc
         </div>
 
         {warehouse && (
-          <div className="text-xs space-y-1 border-t pt-2">
+          <div className="text-xs space-y-1 border-t border-gray-300 pt-2 text-gray-800">
             <div>
               <span className="font-medium">Warehouse:</span> {warehouse.name}
             </div>
@@ -83,13 +83,13 @@ export function ProductLabel({ product, warehouse, inventory, customer }: Produc
         )}
 
         {customer && (
-          <div className="text-xs space-y-1 border-t pt-2">
+          <div className="text-xs space-y-1 border-t border-gray-300 pt-2 text-gray-800">
             <div className="font-medium mb-1">Customer:</div>
             <div>{customer.name}</div>
             {customer.email && <div>{customer.email}</div>}
             {customer.phone && <div>{customer.phone}</div>}
             {customer.address && (
-              <div className="text-muted-foreground">
+              <div className="text-gray-600">
                 {customer.address}
                 {customer.city && `, ${customer.city}`}
                 {customer.state && `, ${customer.state}`}
@@ -99,17 +99,17 @@ export function ProductLabel({ product, warehouse, inventory, customer }: Produc
           </div>
         )}
 
-        <div className="flex items-start justify-between gap-3 border-t pt-3">
+        <div className="flex items-start justify-between gap-3 border-t border-gray-300 pt-3">
           <div className="flex-1">
             {product.barcode ? (
               <div className="space-y-1">
                 <div className="bg-white p-2 rounded inline-block">
                   <canvas ref={barcodeCanvasRef} />
                 </div>
-                <p className="text-xs text-center font-mono">{product.barcode}</p>
+                <p className="text-xs text-center font-mono text-gray-900">{product.barcode}</p>
               </div>
             ) : (
-              <div className="text-xs text-muted-foreground text-center py-4">
+              <div className="text-xs text-gray-500 text-center py-4">
                 No barcode
               </div>
             )}
@@ -121,10 +121,10 @@ export function ProductLabel({ product, warehouse, inventory, customer }: Produc
                 <div className="bg-white p-2 rounded inline-block">
                   <canvas ref={qrcodeCanvasRef} />
                 </div>
-                <p className="text-xs text-center">QR Code</p>
+                <p className="text-xs text-center text-gray-900">QR Code</p>
               </div>
             ) : (
-              <div className="text-xs text-muted-foreground text-center py-4">
+              <div className="text-xs text-gray-500 text-center py-4">
                 No QR code
               </div>
             )}
