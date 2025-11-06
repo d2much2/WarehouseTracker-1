@@ -13,6 +13,7 @@ import { useMicrophonePermission } from "@/hooks/useMicrophonePermission";
 import { WebSocketProvider, useWebSocketContext } from "@/contexts/WebSocketContext";
 import { WebSocketStatus } from "@/components/websocket-status";
 import { MessagingPanel } from "@/components/messaging-panel";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { LoadingPage } from "@/components/loading-page";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
@@ -108,7 +109,7 @@ function AuthenticatedRoutesInner() {
               <ThemeToggle />
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-6 relative">
+          <main className="flex-1 overflow-auto p-6 pb-20 md:pb-6 relative">
             <Switch>
               <Route path="/" component={Dashboard} />
               <Route path="/products" component={Products} />
@@ -135,6 +136,7 @@ function AuthenticatedRoutesInner() {
               </div>
             )}
           </main>
+          <MobileBottomNav />
         </div>
       </div>
     </SidebarProvider>
