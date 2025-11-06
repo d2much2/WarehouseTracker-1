@@ -300,7 +300,7 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getLowStockAlerts(): Promise<Array<InventoryLevel & { product: Product }>> {
+  async getLowStockAlerts(): Promise<Array<InventoryLevel & { product: Product; warehouse: Warehouse }>> {
     const results = await db
       .select({
         id: inventoryLevels.id,
@@ -311,9 +311,11 @@ export class DatabaseStorage implements IStorage {
         shelf: inventoryLevels.shelf,
         updatedAt: inventoryLevels.updatedAt,
         product: products,
+        warehouse: warehouses,
       })
       .from(inventoryLevels)
       .innerJoin(products, eq(inventoryLevels.productId, products.id))
+      .innerJoin(warehouses, eq(inventoryLevels.warehouseId, warehouses.id))
       .where(sql`${inventoryLevels.quantity} < ${products.lowStockThreshold}`);
     
     return results.map(row => ({
@@ -325,6 +327,7 @@ export class DatabaseStorage implements IStorage {
       shelf: row.shelf,
       updatedAt: row.updatedAt,
       product: row.product,
+      warehouse: row.warehouse,
     }));
   }
 
@@ -538,12 +541,44 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(stockMovements.createdAt));
   }
 
-  async getRecentMovements(limit: number = 10): Promise<StockMovement[]> {
-    return await db
-      .select()
+  async getRecentMovements(limit: number = 10): Promise<Array<StockMovement & { product: Product; warehouse: Warehouse; user: User; targetWarehouse?: Warehouse }>> {
+    const results = await db
+      .select({
+        movement: stockMovements,
+        product: products,
+        warehouse: warehouses,
+        user: users,
+      })
       .from(stockMovements)
+      .innerJoin(products, eq(stockMovements.productId, products.id))
+      .innerJoin(warehouses, eq(stockMovements.warehouseId, warehouses.id))
+      .innerJoin(users, eq(stockMovements.userId, users.id))
       .orderBy(desc(stockMovements.createdAt))
       .limit(limit);
+    
+    const movementsWithTargetWarehouse = await Promise.all(
+      results.map(async (row) => {
+        let targetWarehouse: Warehouse | undefined;
+        if (row.movement.targetWarehouseId) {
+          const [target] = await db
+            .select()
+            .from(warehouses)
+            .where(eq(warehouses.id, row.movement.targetWarehouseId))
+            .limit(1);
+          targetWarehouse = target;
+        }
+        
+        return {
+          ...row.movement,
+          product: row.product,
+          warehouse: row.warehouse,
+          user: row.user,
+          targetWarehouse,
+        };
+      })
+    );
+    
+    return movementsWithTargetWarehouse;
   }
 
   async getAllUsers(): Promise<User[]> {
