@@ -36,11 +36,12 @@ export function ProductLabel({ product, warehouse, inventory, customer }: Produc
   }, [product.barcode]);
 
   useEffect(() => {
-    if (qrcodeCanvasRef.current && product.qrCode) {
+    if (qrcodeCanvasRef.current) {
       try {
+        const qrCodeValue = product.qrCode || product.sku;
         bwipjs.toCanvas(qrcodeCanvasRef.current, {
           bcid: 'qrcode',
-          text: product.qrCode,
+          text: qrCodeValue,
           scale: 2,
           includetext: false,
         });
@@ -48,7 +49,7 @@ export function ProductLabel({ product, warehouse, inventory, customer }: Produc
         console.error("QR code generation error:", err);
       }
     }
-  }, [product.qrCode]);
+  }, [product.qrCode, product.sku]);
 
   return (
     <div className="label-container border-2 border-gray-300 rounded-md p-4 bg-white text-gray-900" data-testid={`label-${product.id}`}>
@@ -116,18 +117,14 @@ export function ProductLabel({ product, warehouse, inventory, customer }: Produc
           </div>
 
           <div className="flex-shrink-0">
-            {product.qrCode ? (
-              <div className="space-y-1">
-                <div className="bg-white p-2 rounded inline-block">
-                  <canvas ref={qrcodeCanvasRef} />
-                </div>
-                <p className="text-xs text-center text-gray-900">QR Code</p>
+            <div className="space-y-1">
+              <div className="bg-white p-2 rounded inline-block">
+                <canvas ref={qrcodeCanvasRef} />
               </div>
-            ) : (
-              <div className="text-xs text-gray-500 text-center py-4">
-                No QR code
-              </div>
-            )}
+              <p className="text-xs text-center text-gray-900">
+                {product.qrCode ? "QR Code" : "SKU QR"}
+              </p>
+            </div>
           </div>
         </div>
       </div>
