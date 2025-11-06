@@ -12,8 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Printer, Tag } from "lucide-react";
-import type { Product, Warehouse, InventoryLevel } from "@shared/schema";
+import { Search, Printer, Tag, User } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import type { Product, Warehouse, InventoryLevel, Customer } from "@shared/schema";
 
 interface InventoryWithDetails extends InventoryLevel {
   product: Product;
@@ -24,6 +26,8 @@ export default function Labels() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
+  const [includeCustomer, setIncludeCustomer] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
 
   const { data: inventory, isLoading: loadingInventory } = useQuery<InventoryWithDetails[]>({
     queryKey: ["/api/inventory/all-with-details"],
@@ -31,6 +35,10 @@ export default function Labels() {
 
   const { data: warehouses, isLoading: loadingWarehouses } = useQuery<Warehouse[]>({
     queryKey: ["/api/warehouses"],
+  });
+
+  const { data: customers, isLoading: loadingCustomers } = useQuery<Customer[]>({
+    queryKey: ["/api/customers"],
   });
 
   const filteredInventory = inventory?.filter((item) => {
@@ -73,6 +81,8 @@ export default function Labels() {
     selectedProducts.has(item.id)
   );
 
+  const selectedCustomer = customers?.find((c) => c.id === selectedCustomerId);
+
   return (
     <div className="space-y-6">
       <div className="no-print">
@@ -105,36 +115,66 @@ export default function Labels() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-3 flex-wrap">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search-products"
-                />
+            <div className="space-y-4">
+              <div className="flex gap-3 flex-wrap">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-search-products"
+                  />
+                </div>
+                <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
+                  <SelectTrigger className="w-[200px]" data-testid="select-warehouse">
+                    <SelectValue placeholder="All Warehouses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Warehouses</SelectItem>
+                    {warehouses?.map((warehouse) => (
+                      <SelectItem key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" onClick={selectAll} data-testid="button-select-all">
+                  Select All
+                </Button>
+                <Button variant="outline" onClick={clearAll} data-testid="button-clear-all">
+                  Clear All
+                </Button>
               </div>
-              <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
-                <SelectTrigger className="w-[200px]" data-testid="select-warehouse">
-                  <SelectValue placeholder="All Warehouses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Warehouses</SelectItem>
-                  {warehouses?.map((warehouse) => (
-                    <SelectItem key={warehouse.id} value={warehouse.id}>
-                      {warehouse.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button variant="outline" onClick={selectAll} data-testid="button-select-all">
-                Select All
-              </Button>
-              <Button variant="outline" onClick={clearAll} data-testid="button-clear-all">
-                Clear All
-              </Button>
+
+              <div className="flex items-center gap-4 p-3 border rounded-md bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="include-customer"
+                    checked={includeCustomer}
+                    onCheckedChange={setIncludeCustomer}
+                    data-testid="switch-include-customer"
+                  />
+                  <Label htmlFor="include-customer" className="font-medium cursor-pointer">
+                    Include Customer Details
+                  </Label>
+                </div>
+                {includeCustomer && (
+                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                    <SelectTrigger className="w-[250px]" data-testid="select-customer">
+                      <SelectValue placeholder="Select customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers?.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
             </div>
 
             <div className="border rounded-md max-h-[400px] overflow-auto">
@@ -205,6 +245,7 @@ export default function Labels() {
                     product={item.product}
                     warehouse={item.warehouse}
                     inventory={{ row: item.row, shelf: item.shelf }}
+                    customer={includeCustomer ? selectedCustomer : undefined}
                   />
                 ))}
               </div>
@@ -219,6 +260,7 @@ export default function Labels() {
                   product={item.product}
                   warehouse={item.warehouse}
                   inventory={{ row: item.row, shelf: item.shelf }}
+                  customer={includeCustomer ? selectedCustomer : undefined}
                 />
               ))}
             </div>

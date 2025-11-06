@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 // @ts-ignore - bwip-js types may not be available
 import bwipjs from "bwip-js";
-import type { Product, Warehouse } from "@shared/schema";
+import type { Product, Warehouse, Customer } from "@shared/schema";
 import logoUrl from "@assets/proicon2/Lowes_Companies_Logo.svg.png";
 
 interface ProductLabelProps {
@@ -11,9 +11,10 @@ interface ProductLabelProps {
     row: string | null;
     shelf: string | null;
   };
+  customer?: Customer;
 }
 
-export function ProductLabel({ product, warehouse, inventory }: ProductLabelProps) {
+export function ProductLabel({ product, warehouse, inventory, customer }: ProductLabelProps) {
   const barcodeCanvasRef = useRef<HTMLCanvasElement>(null);
   const qrcodeCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -76,6 +77,23 @@ export function ProductLabel({ product, warehouse, inventory }: ProductLabelProp
             {inventory && (inventory.row || inventory.shelf) && (
               <div className="font-mono">
                 <span className="font-medium">Location:</span> Row {inventory.row || "—"} / Shelf {inventory.shelf || "—"}
+              </div>
+            )}
+          </div>
+        )}
+
+        {customer && (
+          <div className="text-xs space-y-1 border-t pt-2">
+            <div className="font-medium mb-1">Customer:</div>
+            <div>{customer.name}</div>
+            {customer.email && <div>{customer.email}</div>}
+            {customer.phone && <div>{customer.phone}</div>}
+            {customer.address && (
+              <div className="text-muted-foreground">
+                {customer.address}
+                {customer.city && `, ${customer.city}`}
+                {customer.state && `, ${customer.state}`}
+                {customer.zipCode && ` ${customer.zipCode}`}
               </div>
             )}
           </div>
