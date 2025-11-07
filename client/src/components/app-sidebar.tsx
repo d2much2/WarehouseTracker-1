@@ -13,7 +13,6 @@ import {
   BookOpen,
   ShoppingCart,
   UserCircle,
-  Tag,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -69,11 +68,6 @@ const mainMenuItems = [
     title: "Customers",
     url: "/customers",
     icon: UserCircle,
-  },
-  {
-    title: "Labels",
-    url: "/labels",
-    icon: Tag,
   },
   {
     title: "Alerts",

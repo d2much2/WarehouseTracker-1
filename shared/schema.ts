@@ -159,6 +159,7 @@ export const insertProductSchema = createInsertSchema(products).omit({ id: true,
 export const insertInventoryLevelSchema = createInsertSchema(inventoryLevels).omit({ id: true, updatedAt: true });
 export const insertStockMovementSchema = createInsertSchema(stockMovements).omit({ id: true, createdAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
+export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertOrderItemSchema = createInsertSchema(orderItems).omit({ id: true, createdAt: true });
 
@@ -186,6 +187,7 @@ export type StockMovement = typeof stockMovements.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 
+export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type Customer = typeof customers.$inferSelect;
 
 export type InsertOrder = z.infer<typeof insertOrderSchema>;

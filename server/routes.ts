@@ -12,15 +12,12 @@ import {
   insertStockMovementSchema,
   insertInventoryLevelSchema,
   insertMessageSchema,
+  insertCustomerSchema,
   insertOrderSchema,
   insertOrderItemSchema,
   signupSchema,
   loginSchema,
-  customers,
 } from "@shared/schema";
-import { createInsertSchema } from "drizzle-zod";
-
-const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
 import { z } from "zod";
 import Papa from "papaparse";
 import type { WebSocketMessage } from "@shared/websocket-types";
