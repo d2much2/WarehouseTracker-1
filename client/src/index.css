@@ -59,11 +59,11 @@
 
   --card-border: 210 5% 90%;
 
-  --sidebar: 210 5% 94%;
+  --sidebar: 210 5% 98% / 0.7;
 
   --sidebar-foreground: 210 6% 16%;
 
-  --sidebar-border: 210 5% 86%;
+  --sidebar-border: 210 5% 86% / 0.5;
 
   --sidebar-primary: 210 95% 42%;
 
@@ -177,11 +177,11 @@
 
   --card-border: 210 5% 20%;
 
-  --sidebar: 210 5% 14%;
+  --sidebar: 210 5% 14% / 0.7;
 
   --sidebar-foreground: 210 5% 88%;
 
-  --sidebar-border: 210 5% 24%;
+  --sidebar-border: 210 5% 24% / 0.5;
 
   --sidebar-primary: 210 90% 48%;
 
